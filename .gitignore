@@ -1,0 +1,32 @@
+# Build outputs
+bin/
+obj/
+*.user
+*.suo
+.vs/
+*.userprefs
+
+# .NET
+*.nupkg
+*.snupkg
+project.lock.json
+project.fragment.lock.json
+artifacts/
+
+# NuGet
+packages/
+*.nuspec
+
+# Visual Studio
+.vsconfig
+*.vsd
+*.vsix
+*.dotCover
+
+# Rider
+.idea/
+
+# OS
+.DS_Store
+Thumbs.db
+*.orig
