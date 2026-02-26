@@ -1,6 +1,6 @@
 # Present
 
-A Windows WPF presentation app that displays web content and images as slides. Port of the macOS SwiftUI "Present" app.
+A Windows WPF presentation app that displays web content and images as slides. Port of the Simon Willison's [dream macOS presentation app](https://simonwillison.net/2026/Feb/25/present/).
 
 ## Features
 
@@ -32,6 +32,44 @@ dotnet run --project src/Present/Present.csproj
 ```
 
 Or open `Present.sln` in Visual Studio 2022 and press F5.
+
+## Testing
+
+This repository includes automated tests in two projects:
+
+- `tests/Present.Tests` - unit and integration tests for core logic and services
+- `tests/Present.UiTests` - gated desktop UI smoke tests (FlaUI)
+
+Run all tests:
+
+```powershell
+dotnet test Present.sln
+```
+
+Run only unit/integration tests:
+
+```powershell
+dotnet test tests/Present.Tests/Present.Tests.csproj
+```
+
+Run UI smoke tests (opt-in):
+
+```powershell
+$env:PRESENT_UI_TESTS = "1"
+dotnet test tests/Present.UiTests/Present.UiTests.csproj
+```
+
+If `PRESENT_UI_TESTS` is not set to `1`, UI smoke tests are skipped by design.
+
+## TDD Workflow
+
+Development follows red/green/refactor TDD:
+
+1. Write a failing test first (red)
+2. Implement the smallest change to pass (green)
+3. Refactor with tests still passing (refactor)
+
+Recent test-related changes in this repo were implemented as one commit per TDD slice to keep history explicit and auditable.
 
 ## Usage
 
@@ -102,6 +140,9 @@ All endpoints (except `/`) return a JSON status object.
 Present/
 ├── Present.sln
 ├── README.md
+├── tests/
+│   ├── Present.Tests/
+│   └── Present.UiTests/
 └── src/
     └── Present/
         ├── Present.csproj
