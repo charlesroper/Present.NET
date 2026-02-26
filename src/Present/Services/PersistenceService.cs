@@ -8,11 +8,12 @@ namespace Present.Services;
 /// </summary>
 public static class PersistenceService
 {
-    private static readonly string AppDataDir =
+    private static readonly string DefaultAppDataDir =
         Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "Present");
 
-    private static readonly string DefaultSavePath =
-        Path.Combine(AppDataDir, "slides.txt");
+    private static string _appDataDir = DefaultAppDataDir;
+
+    private static string DefaultSavePath => Path.Combine(_appDataDir, "slides.txt");
 
     /// <summary>
     /// Load URLs from the auto-save file. Returns empty list if not found.
@@ -29,8 +30,18 @@ public static class PersistenceService
     /// </summary>
     public static void SaveDefault(IEnumerable<string> urls)
     {
-        Directory.CreateDirectory(AppDataDir);
+        Directory.CreateDirectory(_appDataDir);
         SaveTo(DefaultSavePath, urls);
+    }
+
+    internal static void ConfigureStorageRootForTesting(string appDataDir)
+    {
+        _appDataDir = appDataDir;
+    }
+
+    internal static void ResetStorageRootForTesting()
+    {
+        _appDataDir = DefaultAppDataDir;
     }
 
     /// <summary>
