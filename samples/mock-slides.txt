@@ -1,0 +1,10 @@
+https://example.com/
+https://www.wikipedia.org/
+https://developer.mozilla.org/en-US/
+https://news.ycombinator.com/
+https://www.bbc.com/news
+https://upload.wikimedia.org/wikipedia/commons/3/3f/Fronalpstock_big.jpg
+https://upload.wikimedia.org/wikipedia/commons/4/47/PNG_transparency_demonstration_1.png
+https://upload.wikimedia.org/wikipedia/commons/6/6b/Bitmap_VS_SVG.svg
+https://picsum.photos/1600/900.jpg
+https://picsum.photos/1200/800.webp
