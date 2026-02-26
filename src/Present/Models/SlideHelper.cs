@@ -39,8 +39,7 @@ public static class SlideHelper
     /// </summary>
     public static string GetImageHtml(string url)
     {
-        // Escape quotes in URL for safety
-        var safeUrl = url.Replace("\"", "%22").Replace("'", "%27");
+        var safeUrl = System.Net.WebUtility.HtmlEncode(url);
         return $$"""
             <!DOCTYPE html>
             <html>
