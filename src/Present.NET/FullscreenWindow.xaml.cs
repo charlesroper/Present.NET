@@ -12,6 +12,8 @@ namespace Present.NET;
 public partial class FullscreenWindow : Window
 {
     private readonly List<SlideItem> _slides;
+    private readonly Func<string, Task<string>>? _urlResolverAsync;
+    private readonly SemaphoreSlim _navigationLock = new(1, 1);
     private int _currentIndex;
     private double _zoomFactor;
     private bool _webViewReady;
@@ -19,10 +21,11 @@ public partial class FullscreenWindow : Window
     public int CurrentIndex => _currentIndex;
     public double ZoomFactor => _zoomFactor;
 
-    public FullscreenWindow(List<SlideItem> slides, int startIndex, double zoomFactor)
+    public FullscreenWindow(List<SlideItem> slides, int startIndex, double zoomFactor, Func<string, Task<string>>? urlResolverAsync = null)
     {
         InitializeComponent();
         _slides = slides;
+        _urlResolverAsync = urlResolverAsync;
         _currentIndex = Math.Clamp(startIndex, 0, Math.Max(0, slides.Count - 1));
         _zoomFactor = zoomFactor;
     }
@@ -33,25 +36,40 @@ public partial class FullscreenWindow : Window
         _webViewReady = true;
         SlideWebView.CoreWebView2.Settings.IsStatusBarEnabled = false;
         SlideWebView.CoreWebView2.Settings.AreDefaultContextMenusEnabled = false;
-        NavigateToCurrentSlide();
+        await NavigateToCurrentSlideAsync();
         UpdateCounter();
     }
 
-    private void NavigateToCurrentSlide()
+    private async Task NavigateToCurrentSlideAsync()
     {
         if (!_webViewReady || _slides.Count == 0) return;
 
-        var url = _slides[_currentIndex].Url;
-        if (SlideHelper.IsImageUrl(url))
+        await _navigationLock.WaitAsync();
+        try
         {
-            SlideWebView.NavigateToString(SlideHelper.GetImageHtml(url));
+            var url = _slides[_currentIndex].Url;
+            var resolvedUrl = _urlResolverAsync != null
+                ? await _urlResolverAsync(url)
+                : url;
+
+            if (SlideHelper.IsImageUrl(url))
+            {
+                if (resolvedUrl.StartsWith("file://", StringComparison.OrdinalIgnoreCase))
+                    SlideWebView.CoreWebView2.Navigate(resolvedUrl);
+                else
+                    SlideWebView.NavigateToString(SlideHelper.GetImageHtml(resolvedUrl));
+            }
+            else
+            {
+                SlideWebView.CoreWebView2.Navigate(resolvedUrl);
+            }
+            SlideWebView.ZoomFactor = _zoomFactor;
+            UpdateCounter();
         }
-        else
+        finally
         {
-            SlideWebView.CoreWebView2.Navigate(url);
+            _navigationLock.Release();
         }
-        SlideWebView.ZoomFactor = _zoomFactor;
-        UpdateCounter();
     }
 
     private void UpdateCounter()
@@ -113,14 +131,14 @@ public partial class FullscreenWindow : Window
     {
         if (_slides.Count == 0) return;
         _currentIndex = (_currentIndex + 1) % _slides.Count;
-        NavigateToCurrentSlide();
+        _ = NavigateToCurrentSlideAsync();
     }
 
     public void NavigatePrev()
     {
         if (_slides.Count == 0) return;
         _currentIndex = (_currentIndex - 1 + _slides.Count) % _slides.Count;
-        NavigateToCurrentSlide();
+        _ = NavigateToCurrentSlideAsync();
     }
 
     public void ZoomIn()

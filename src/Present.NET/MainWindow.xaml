@@ -46,6 +46,11 @@
             <Button Click="ZoomOut_Click" ToolTip="Zoom Out (Ctrl+-)" Padding="8,4" Content="Zoom -"/>
             <Button Click="ZoomReset_Click" ToolTip="Reset Zoom (Ctrl+0)" Padding="8,4" Content="Reset"/>
             <Separator/>
+            <Button x:Name="ReloadSlideCacheButton" Click="ReloadSelectedSlideCache_Click" ToolTip="Purge and re-cache selected slide" Padding="8,4" Content="Reload Slide"/>
+            <Button x:Name="RecacheAllButton" Click="RecacheAll_Click" ToolTip="Purge and re-cache all slides" Padding="8,4" Content="Re-cache"/>
+            <Button x:Name="ClearCacheButton" Click="ClearCache_Click" ToolTip="Clear all cached slide content" Padding="8,4" Content="Clear Cache"/>
+            <TextBlock x:Name="CacheStatusText" VerticalAlignment="Center" Foreground="#555" FontSize="11" Margin="6,0,0,0"/>
+            <Separator/>
             <Border x:Name="RemoteInfoContainer"
                     Padding="4,2"
                     Margin="0"
@@ -136,6 +141,7 @@
                                 <Grid.ColumnDefinitions>
                                     <ColumnDefinition Width="32"/>
                                     <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="100"/>
                                 </Grid.ColumnDefinitions>
                                 <TextBlock Grid.Column="0"
                                            Text="{Binding Number}"
@@ -168,6 +174,13 @@
                                         </Style>
                                     </TextBox.Style>
                                 </TextBox>
+                                <TextBlock Grid.Column="2"
+                                           Text="{Binding CacheSummary}"
+                                           Foreground="#888"
+                                           FontSize="10"
+                                           HorizontalAlignment="Right"
+                                           VerticalAlignment="Center"
+                                           Margin="0,0,8,0"/>
                             </Grid>
                         </DataTemplate>
                     </ListBox.ItemTemplate>
@@ -182,6 +195,9 @@
             <Grid Grid.Column="2" Background="#222">
                 <wv2:WebView2 x:Name="PreviewWebView"
                               Visibility="Collapsed"/>
+                <wv2:WebView2 x:Name="PreloadWebView"
+                              Visibility="Collapsed"
+                              IsHitTestVisible="False"/>
                 <Border x:Name="PreviewPlaceholder"
                         Background="#222"
                         HorizontalAlignment="Center"

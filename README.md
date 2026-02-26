@@ -12,6 +12,7 @@ For pragmatic contributor/agent workflow guidance, see `AGENTS.md`.
 - **File I/O**: Open/Save slide lists as plain text files (one URL per line)
 - **Zoom Controls**: `Ctrl+=` / `Ctrl+-` / `Ctrl+0` to zoom in/out/reset (applies to both preview and fullscreen)
 - **Image Slides**: URLs ending in `.png`, `.gif`, `.jpg`, `.jpeg`, `.webp`, `.svg` are rendered as full-window images on a black background
+- **Slide Cache**: Slides are cached on load for faster navigation; toolbar actions support clear, re-cache, and reload of the selected slide
 - **Remote Control Server**: Embedded HTTP server on port 9123 with a mobile-friendly HTML control page
 
 ## Requirements
@@ -135,6 +136,20 @@ Navigation wraps around (last slide → first, first slide → last).
 ### Image Slides
 
 URLs ending in `.png`, `.gif`, `.jpg`, `.jpeg`, `.webp`, or `.svg` are automatically detected and rendered as full-window images on a black background, scaled to fit while preserving aspect ratio.
+
+### Slide Cache
+
+When you open a slide list, Present.NET starts caching slides in the background.
+
+- Selecting a slide also triggers caching if it is not cached yet.
+- **Reload Slide** purges and re-caches the selected slide.
+- **Re-cache** clears and rebuilds cache for all slides.
+- **Clear Cache** removes all cached slide content.
+
+Cache status is shown next to each slide in the sidebar.
+
+- `Cached (cache)` means the current slide is loading from local disk cache.
+- `Cached (network)` means the slide is warm-cached for WebView but still rendered from its network URL.
 
 ### Remote Control
 

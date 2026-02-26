@@ -1,6 +1,7 @@
 using System.Collections.ObjectModel;
 using System.Net.NetworkInformation;
 using System.Net.Sockets;
+using System.Threading;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
@@ -22,6 +23,9 @@ public partial class MainWindow : Window
     private double _zoomFactor = 1.0;
     private bool _previewWebViewReady;
     private string? _remoteControlUrl;
+    private readonly SlideCacheService _slideCacheService = new();
+    private readonly SemaphoreSlim _cacheOperationLock = new(1, 1);
+    private CancellationTokenSource? _cacheCts;
 
     private RemoteControlServer? _server;
     private FullscreenWindow? _fullscreenWindow;
@@ -53,9 +57,12 @@ public partial class MainWindow : Window
         try
         {
             await PreviewWebView.EnsureCoreWebView2Async();
+            await PreloadWebView.EnsureCoreWebView2Async();
             _previewWebViewReady = true;
             PreviewWebView.CoreWebView2.Settings.IsStatusBarEnabled = false;
             PreviewWebView.CoreWebView2.Settings.AreDefaultContextMenusEnabled = false;
+            PreloadWebView.CoreWebView2.Settings.IsStatusBarEnabled = false;
+            PreloadWebView.CoreWebView2.Settings.AreDefaultContextMenusEnabled = false;
         }
         catch (Exception ex)
         {
@@ -76,6 +83,7 @@ public partial class MainWindow : Window
         _isDirty = false;
         UpdateTitle();
         UpdateSlideCountLabel();
+        _ = StartCachingAllSlides();
     }
 
     private void StartRemoteServer()
@@ -170,6 +178,7 @@ public partial class MainWindow : Window
         }
 
         PersistenceService.SaveDefault(_slides.Select(s => s.Url));
+        _cacheCts?.Cancel();
         _server?.Stop();
         _server?.Dispose();
         _fullscreenWindow?.Close();
@@ -220,6 +229,7 @@ public partial class MainWindow : Window
         RefreshNumbers();
         UpdateTitle();
         UpdateSlideCountLabel();
+        _ = StartCachingAllSlides();
     }
 
     private void SaveFile_Click(object sender, RoutedEventArgs e) => SaveCurrentFile();
@@ -263,7 +273,7 @@ public partial class MainWindow : Window
         }
 
         var startIndex = SlideListBox.SelectedIndex >= 0 ? SlideListBox.SelectedIndex : 0;
-        _fullscreenWindow = new FullscreenWindow(_slides.ToList(), startIndex, _zoomFactor);
+        _fullscreenWindow = new FullscreenWindow(_slides.ToList(), startIndex, _zoomFactor, ResolveSlideUrlAsync);
         _fullscreenWindow.Closed += (_, _) => _fullscreenWindow = null;
         _fullscreenWindow.Show();
     }
@@ -374,11 +384,16 @@ public partial class MainWindow : Window
     // -----------------------------------------------------------------------
     // Slide list selection to preview
     // -----------------------------------------------------------------------
-    private void SlideListBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
+    private async void SlideListBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
     {
         if (SlideListBox.SelectedItem is SlideItem selected)
         {
-            NavigatePreview(selected.Url);
+            if (SlideHelper.IsImageUrl(selected.Url))
+                await CacheSlideIfNeededAsync(selected, forceRefresh: false, CancellationToken.None);
+            else
+                _ = CacheSlideIfNeededAsync(selected, forceRefresh: false, CancellationToken.None);
+
+            await NavigatePreviewAsync(selected);
         }
         else
         {
@@ -387,18 +402,28 @@ public partial class MainWindow : Window
         }
     }
 
-    private void NavigatePreview(string url)
+    private async Task NavigatePreviewAsync(SlideItem slide)
     {
+        var url = slide.Url;
         if (!_previewWebViewReady || string.IsNullOrWhiteSpace(url)) return;
         if (url == "https://") return; // placeholder URL, don't navigate
 
         PreviewPlaceholder.Visibility = Visibility.Collapsed;
         PreviewWebView.Visibility = Visibility.Visible;
 
+        var resolvedUrl = await ResolveSlideUrlAsync(url);
+        var fromCache = IsFileUri(resolvedUrl);
+        slide.Source = fromCache ? SlideSource.Cache : SlideSource.Network;
+
         if (SlideHelper.IsImageUrl(url))
-            PreviewWebView.NavigateToString(SlideHelper.GetImageHtml(url));
+        {
+            if (fromCache)
+                PreviewWebView.CoreWebView2.Navigate(resolvedUrl);
+            else
+                PreviewWebView.NavigateToString(SlideHelper.GetImageHtml(resolvedUrl));
+        }
         else
-            PreviewWebView.CoreWebView2.Navigate(url);
+            PreviewWebView.CoreWebView2.Navigate(resolvedUrl);
 
         PreviewWebView.ZoomFactor = _zoomFactor;
     }
@@ -419,10 +444,11 @@ public partial class MainWindow : Window
             if (item.Url != tb.Text)
             {
                 item.Url = tb.Text;
+                item.CacheState = SlideCacheState.Unknown;
                 MarkDirty();
                 // Refresh preview if this is the selected item
                 if (SlideListBox.SelectedItem == item)
-                    NavigatePreview(item.Url);
+                    _ = NavigatePreviewAsync(item);
             }
         }
         PersistenceService.SaveDefault(_slides.Select(s => s.Url));
@@ -554,6 +580,195 @@ public partial class MainWindow : Window
                 ? _slides[SlideListBox.SelectedIndex].Url : null,
             ZoomFactor = _zoomFactor
         });
+    }
+
+    private async void ClearCache_Click(object sender, RoutedEventArgs e)
+    {
+        await _cacheOperationLock.WaitAsync();
+        try
+        {
+            CacheStatusText.Text = "Clearing cache...";
+            await _slideCacheService.ClearAllAsync();
+            if (_previewWebViewReady && PreviewWebView.CoreWebView2?.Profile != null)
+            {
+                await PreviewWebView.CoreWebView2.Profile.ClearBrowsingDataAsync(CoreWebView2BrowsingDataKinds.DiskCache);
+            }
+
+            foreach (var slide in _slides)
+                slide.CacheState = SlideCacheState.Unknown;
+
+            CacheStatusText.Text = "Cache cleared";
+        }
+        catch
+        {
+            CacheStatusText.Text = "Cache clear failed";
+        }
+        finally
+        {
+            _cacheOperationLock.Release();
+        }
+    }
+
+    private async void RecacheAll_Click(object sender, RoutedEventArgs e)
+    {
+        await StartCachingAllSlides(forceRefresh: true);
+    }
+
+    private async void ReloadSelectedSlideCache_Click(object sender, RoutedEventArgs e)
+    {
+        if (SlideListBox.SelectedItem is not SlideItem slide)
+            return;
+
+        await _cacheOperationLock.WaitAsync();
+        try
+        {
+            CacheStatusText.Text = "Reloading selected slide...";
+            await _slideCacheService.RemoveCachedAsync(slide.Url);
+            slide.CacheState = SlideCacheState.Unknown;
+        }
+        finally
+        {
+            _cacheOperationLock.Release();
+        }
+
+        await CacheSlideIfNeededAsync(slide, forceRefresh: true, CancellationToken.None);
+        if (SlideListBox.SelectedItem == slide)
+            await NavigatePreviewAsync(slide);
+    }
+
+    private async Task StartCachingAllSlides(bool forceRefresh = false)
+    {
+        _cacheCts?.Cancel();
+        _cacheCts = new CancellationTokenSource();
+        var token = _cacheCts.Token;
+
+        await _cacheOperationLock.WaitAsync(token);
+        try
+        {
+            if (_slides.Count == 0)
+            {
+                CacheStatusText.Text = "";
+                return;
+            }
+
+            CacheStatusText.Text = forceRefresh ? "Re-caching all slides..." : "Caching slides...";
+            var done = 0;
+            foreach (var slide in _slides)
+            {
+                token.ThrowIfCancellationRequested();
+                await CacheSlideIfNeededAsync(slide, forceRefresh, token);
+                done++;
+                CacheStatusText.Text = $"Caching {done}/{_slides.Count}";
+            }
+
+            CacheStatusText.Text = "Cache ready";
+        }
+        catch (OperationCanceledException)
+        {
+            CacheStatusText.Text = "";
+        }
+        finally
+        {
+            _cacheOperationLock.Release();
+        }
+    }
+
+    private async Task CacheSlideIfNeededAsync(SlideItem slide, bool forceRefresh, CancellationToken cancellationToken)
+    {
+        if (string.IsNullOrWhiteSpace(slide.Url) || slide.Url == "https://")
+        {
+            slide.CacheState = SlideCacheState.Unknown;
+            return;
+        }
+
+        try
+        {
+            slide.CacheState = SlideCacheState.Caching;
+            slide.Source = SlideSource.Unknown;
+
+            if (SlideHelper.IsImageUrl(slide.Url))
+            {
+                if (!forceRefresh && _slideCacheService.TryGetCachedPath(slide.Url) != null)
+                {
+                    slide.CacheState = SlideCacheState.Cached;
+                    slide.Source = SlideSource.Cache;
+                    return;
+                }
+
+                if (forceRefresh)
+                    await _slideCacheService.RemoveCachedAsync(slide.Url);
+
+                await _slideCacheService.EnsureCachedAsync(slide.Url, cancellationToken);
+                slide.Source = SlideSource.Cache;
+            }
+            else
+            {
+                if (forceRefresh && _previewWebViewReady && PreviewWebView.CoreWebView2?.Profile != null)
+                    await PreviewWebView.CoreWebView2.Profile.ClearBrowsingDataAsync(CoreWebView2BrowsingDataKinds.DiskCache);
+
+                await WarmPageCacheAsync(slide.Url, cancellationToken);
+                slide.Source = SlideSource.Network;
+            }
+
+            slide.CacheState = SlideCacheState.Cached;
+        }
+        catch
+        {
+            slide.CacheState = SlideCacheState.Failed;
+            slide.Source = SlideSource.Failed;
+        }
+    }
+
+    private static bool IsFileUri(string url)
+    {
+        return url.StartsWith("file://", StringComparison.OrdinalIgnoreCase);
+    }
+
+    private async Task<string> ResolveSlideUrlAsync(string originalUrl)
+    {
+        if (!SlideHelper.IsImageUrl(originalUrl))
+            return originalUrl;
+
+        var cachedPath = _slideCacheService.TryGetCachedPath(originalUrl);
+        if (string.IsNullOrWhiteSpace(cachedPath))
+        {
+            try
+            {
+                await _slideCacheService.EnsureCachedAsync(originalUrl);
+                cachedPath = _slideCacheService.TryGetCachedPath(originalUrl);
+            }
+            catch
+            {
+                return originalUrl;
+            }
+        }
+
+        return string.IsNullOrWhiteSpace(cachedPath)
+            ? originalUrl
+            : new Uri(cachedPath).AbsoluteUri;
+    }
+
+    private async Task WarmPageCacheAsync(string url, CancellationToken cancellationToken)
+    {
+        if (!_previewWebViewReady || PreloadWebView.CoreWebView2 == null)
+            return;
+
+        var tcs = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
+        EventHandler<CoreWebView2NavigationCompletedEventArgs>? handler = null;
+        handler = (_, args) =>
+        {
+            PreloadWebView.CoreWebView2.NavigationCompleted -= handler;
+            if (args.IsSuccess)
+                tcs.TrySetResult(true);
+            else
+                tcs.TrySetException(new InvalidOperationException($"Navigation failed: {args.WebErrorStatus}"));
+        };
+
+        PreloadWebView.CoreWebView2.NavigationCompleted += handler;
+        using var reg = cancellationToken.Register(() => tcs.TrySetCanceled(cancellationToken));
+        PreloadWebView.CoreWebView2.Navigate(url);
+
+        await tcs.Task.WaitAsync(TimeSpan.FromSeconds(30), cancellationToken);
     }
 
     // -----------------------------------------------------------------------

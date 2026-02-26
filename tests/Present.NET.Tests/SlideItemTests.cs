@@ -61,4 +61,40 @@ public class SlideItemTests
 
         Assert.Equal(string.Empty, slide.Url);
     }
+
+    [Fact]
+    public void CacheState_UpdatesCacheLabel()
+    {
+        var slide = new SlideItem("https://example.com", 1);
+
+        slide.CacheState = SlideCacheState.Caching;
+        Assert.Equal("Caching", slide.CacheLabel);
+
+        slide.CacheState = SlideCacheState.Cached;
+        Assert.Equal("Cached", slide.CacheLabel);
+    }
+
+    [Fact]
+    public void Source_UpdatesSourceLabel()
+    {
+        var slide = new SlideItem("https://example.com", 1);
+
+        slide.Source = SlideSource.Network;
+        Assert.Equal("network", slide.SourceLabel);
+
+        slide.Source = SlideSource.Cache;
+        Assert.Equal("cache", slide.SourceLabel);
+    }
+
+    [Fact]
+    public void CacheSummary_ShowsBothCacheAndSource()
+    {
+        var slide = new SlideItem("https://example.com", 1)
+        {
+            CacheState = SlideCacheState.Cached,
+            Source = SlideSource.Cache
+        };
+
+        Assert.Equal("Cached (cache)", slide.CacheSummary);
+    }
 }
