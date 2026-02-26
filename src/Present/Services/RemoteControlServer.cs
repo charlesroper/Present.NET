@@ -10,11 +10,12 @@ namespace Present.Services;
 /// </summary>
 public class RemoteControlServer : IDisposable
 {
-    private readonly HttpListener _listener;
+    private HttpListener _listener;
     private readonly int _port;
     private CancellationTokenSource? _cts;
     private Task? _listenerTask;
     private bool _disposed;
+    private bool _started;
 
     // Actions dispatched to the UI
     public Action? OnNext { get; set; }
@@ -31,12 +32,14 @@ public class RemoteControlServer : IDisposable
     public RemoteControlServer(int port = 9123)
     {
         _port = port;
-        _listener = new HttpListener();
-        _listener.Prefixes.Add($"http://+:{port}/");
+        _listener = CreateListener(port, bindAnyHost: true);
     }
 
     public void Start()
     {
+        if (_disposed) throw new ObjectDisposedException(nameof(RemoteControlServer));
+        if (_started) return;
+
         _cts = new CancellationTokenSource();
         try
         {
@@ -44,18 +47,32 @@ public class RemoteControlServer : IDisposable
         }
         catch (HttpListenerException)
         {
-            // Try localhost only as fallback
-            _listener.Prefixes.Clear();
-            _listener.Prefixes.Add($"http://localhost:{_port}/");
+            // Try localhost only as fallback.
+            _listener.Close();
+            _listener = CreateListener(_port, bindAnyHost: false);
             _listener.Start();
         }
+        _started = true;
         _listenerTask = Task.Run(() => ListenLoop(_cts.Token));
     }
 
     public void Stop()
     {
+        if (!_started) return;
+
         _cts?.Cancel();
-        _listener.Stop();
+        try
+        {
+            _listener.Stop();
+        }
+        catch (ObjectDisposedException)
+        {
+            // Listener already disposed; stopping is complete.
+        }
+        finally
+        {
+            _started = false;
+        }
     }
 
     private async Task ListenLoop(CancellationToken ct)
@@ -114,8 +131,8 @@ public class RemoteControlServer : IDisposable
                     OnZoomOut?.Invoke();
                     break;
                 case "/scroll":
-                    var dy = ParseQueryParam(query, "dy");
-                    OnScroll?.Invoke(dy);
+                    if (TryParseQueryParam(query, "dy", out var dy))
+                        OnScroll?.Invoke(dy);
                     break;
                 case "/status":
                     // Just fall through to JSON response
@@ -136,17 +153,29 @@ public class RemoteControlServer : IDisposable
         }
     }
 
-    private static int ParseQueryParam(string query, string param)
+    private static bool TryParseQueryParam(string query, string param, out int value)
     {
-        if (string.IsNullOrEmpty(query)) return 0;
+        value = 0;
+        if (string.IsNullOrEmpty(query)) return false;
         var qs = query.TrimStart('?');
         foreach (var part in qs.Split('&'))
         {
             var kv = part.Split('=');
             if (kv.Length == 2 && kv[0] == param && int.TryParse(kv[1], out int val))
-                return val;
+            {
+                value = val;
+                return true;
+            }
         }
-        return 0;
+        return false;
+    }
+
+    private static HttpListener CreateListener(int port, bool bindAnyHost)
+    {
+        var listener = new HttpListener();
+        var hostPrefix = bindAnyHost ? "+" : "localhost";
+        listener.Prefixes.Add($"http://{hostPrefix}:{port}/");
+        return listener;
     }
 
     private static void ServeHtml(HttpListenerResponse resp, string html)
@@ -241,19 +270,19 @@ public class RemoteControlServer : IDisposable
           </style>
         </head>
         <body>
-          <h1>🎬 Present Remote</h1>
-          <div id="slide-info">Connecting…</div>
+          <h1>Present Remote</h1>
+          <div id="slide-info">Connecting...</div>
           <div class="grid">
-            <button onclick="cmd('prev')">◀ Prev</button>
-            <button onclick="cmd('next')">Next ▶</button>
-            <button class="wide play" onclick="cmd('play')">▶ Play Fullscreen</button>
-            <button class="wide stop" onclick="cmd('stop')">■ Stop</button>
-            <button onclick="cmd('zoomin')">🔍 Zoom In</button>
-            <button onclick="cmd('zoomout')">🔍 Zoom Out</button>
-            <button onclick="cmd('scroll?dy=-200')">⬆ Scroll Up</button>
-            <button onclick="cmd('scroll?dy=200')">⬇ Scroll Down</button>
+            <button onclick="cmd('prev')">Prev</button>
+            <button onclick="cmd('next')">Next</button>
+            <button class="wide play" onclick="cmd('play')">Play Fullscreen</button>
+            <button class="wide stop" onclick="cmd('stop')">Stop</button>
+            <button onclick="cmd('zoomin')">Zoom In</button>
+            <button onclick="cmd('zoomout')">Zoom Out</button>
+            <button onclick="cmd('scroll?dy=-200')">Scroll Up</button>
+            <button onclick="cmd('scroll?dy=200')">Scroll Down</button>
           </div>
-          <div id="status-bar">Connecting…</div>
+          <div id="status-bar">Connecting...</div>
 
           <script>
             function cmd(action) {
@@ -271,14 +300,14 @@ public class RemoteControlServer : IDisposable
               document.getElementById('slide-info').innerHTML =
                 total > 0
                   ? 'Slide <span>' + idx + '</span> of <span>' + total + '</span>'
-                    + (playing ? ' <span style="color:#0a5">▶ Playing</span>' : '')
+                    + (playing ? ' <span style="color:#0a5">Playing</span>' : '')
                   : 'No slides loaded';
-              document.getElementById('status-bar').textContent = '● Connected';
+              document.getElementById('status-bar').textContent = 'Connected';
               document.getElementById('status-bar').className = 'connected';
             }
 
             function setError(e) {
-              document.getElementById('status-bar').textContent = '✕ ' + e;
+              document.getElementById('status-bar').textContent = 'Error: ' + e;
               document.getElementById('status-bar').className = 'error';
             }
 
@@ -287,7 +316,7 @@ public class RemoteControlServer : IDisposable
                 .then(r => r.json())
                 .then(updateUI)
                 .catch(e => {
-                  document.getElementById('status-bar').textContent = '✕ Disconnected';
+                  document.getElementById('status-bar').textContent = 'Disconnected';
                   document.getElementById('status-bar').className = 'error';
                 });
             }
