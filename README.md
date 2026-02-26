@@ -20,7 +20,39 @@ For pragmatic contributor/agent workflow guidance, see `AGENTS.md`.
 - **.NET 8 SDK** — [Download](https://dotnet.microsoft.com/download/dotnet/8.0)
 - **Microsoft Edge WebView2 Runtime** — Usually pre-installed on Windows 10/11. If not, [download here](https://developer.microsoft.com/en-us/microsoft-edge/webview2/)
 
-## Build & Run
+## Quick Start (First Time with .NET)
+
+If you are new to .NET, follow these steps exactly.
+
+1. Install the **.NET 8 SDK**: https://dotnet.microsoft.com/download/dotnet/8.0
+2. Open a terminal in this repository root (`present`).
+3. Verify .NET is installed:
+
+```powershell
+dotnet --version
+```
+
+You should see a version that starts with `8.`.
+
+4. Restore dependencies:
+
+```powershell
+dotnet restore
+```
+
+5. Build the app:
+
+```powershell
+dotnet build Present.NET.sln -c Release
+```
+
+6. Run the app:
+
+```powershell
+dotnet run --project src/Present.NET/Present.NET.csproj
+```
+
+## Build and Run (Reference)
 
 ```powershell
 # Clone and build
