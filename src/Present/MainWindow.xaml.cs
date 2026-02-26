@@ -39,8 +39,6 @@ public partial class MainWindow : Window
         _slides.CollectionChanged += (_, _) => RefreshNumbers();
     }
 
-    private async void Window_Loaded_unused() { }
-
     protected override async void OnContentRendered(EventArgs e)
     {
         base.OnContentRendered(e);
@@ -340,7 +338,7 @@ public partial class MainWindow : Window
     }
 
     // -----------------------------------------------------------------------
-    // Slide list selection → preview
+    // Slide list selection to preview
     // -----------------------------------------------------------------------
     private void SlideListBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
     {
@@ -542,11 +540,11 @@ public partial class MainWindow : Window
 
     private void UpdateTitle()
     {
-        var dirty = _isDirty ? "• " : "";
+        var dirty = _isDirty ? "* " : "";
         var file = _currentFilePath != null
             ? System.IO.Path.GetFileName(_currentFilePath)
             : "Untitled";
-        Title = $"{dirty}{file} – Present";
+        Title = $"{dirty}{file} - Present";
     }
 
     private void UpdateSlideCountLabel()

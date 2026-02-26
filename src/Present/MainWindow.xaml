@@ -3,14 +3,15 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:wv2="clr-namespace:Microsoft.Web.WebView2.Wpf;assembly=Microsoft.Web.WebView2.Wpf"
         Title="Present" Height="640" Width="1024" MinWidth="600" MinHeight="400"
+        Icon="Assets/present.ico"
         Closing="Window_Closing">
     <DockPanel>
         <!-- Menu -->
         <Menu DockPanel.Dock="Top">
             <MenuItem Header="_File">
-                <MenuItem Header="_Open…" Click="OpenFile_Click" InputGestureText="Ctrl+O"/>
+                <MenuItem Header="_Open..." Click="OpenFile_Click" InputGestureText="Ctrl+O"/>
                 <MenuItem Header="_Save" Click="SaveFile_Click" InputGestureText="Ctrl+S"/>
-                <MenuItem Header="Save _As…" Click="SaveFileAs_Click" InputGestureText="Ctrl+Shift+S"/>
+                <MenuItem Header="Save _As..." Click="SaveFileAs_Click" InputGestureText="Ctrl+Shift+S"/>
                 <Separator/>
                 <MenuItem Header="_Exit" Click="Exit_Click"/>
             </MenuItem>
@@ -31,20 +32,19 @@
         <ToolBar DockPanel.Dock="Top" Background="#F3F3F3">
             <Button Click="Play_Click" ToolTip="Play Presentation (F5)" Padding="8,4">
                 <StackPanel Orientation="Horizontal">
-                    <TextBlock Text="▶" Margin="0,0,4,0"/>
                     <TextBlock Text="Play"/>
                 </StackPanel>
             </Button>
             <Separator/>
             <Button Click="AddSlide_Click" ToolTip="Add Slide" Padding="8,4" Content="+ Add Slide"/>
-            <Button Click="RemoveSlide_Click" ToolTip="Remove Selected Slide" Padding="8,4" Content="✕ Remove"/>
+            <Button Click="RemoveSlide_Click" ToolTip="Remove Selected Slide" Padding="8,4" Content="Remove"/>
             <Separator/>
-            <Button Click="MoveUp_Click" ToolTip="Move Slide Up" Padding="8,4" Content="↑"/>
-            <Button Click="MoveDown_Click" ToolTip="Move Slide Down" Padding="8,4" Content="↓"/>
+            <Button Click="MoveUp_Click" ToolTip="Move Slide Up" Padding="8,4" Content="Up"/>
+            <Button Click="MoveDown_Click" ToolTip="Move Slide Down" Padding="8,4" Content="Down"/>
             <Separator/>
-            <Button Click="ZoomIn_Click" ToolTip="Zoom In (Ctrl+=)" Padding="8,4" Content="��+"/>
-            <Button Click="ZoomOut_Click" ToolTip="Zoom Out (Ctrl+-)" Padding="8,4" Content="🔍−"/>
-            <Button Click="ZoomReset_Click" ToolTip="Reset Zoom (Ctrl+0)" Padding="8,4" Content="⊙"/>
+            <Button Click="ZoomIn_Click" ToolTip="Zoom In (Ctrl+=)" Padding="8,4" Content="Zoom +"/>
+            <Button Click="ZoomOut_Click" ToolTip="Zoom Out (Ctrl+-)" Padding="8,4" Content="Zoom -"/>
+            <Button Click="ZoomReset_Click" ToolTip="Reset Zoom (Ctrl+0)" Padding="8,4" Content="Reset"/>
             <Separator/>
             <TextBlock x:Name="RemoteInfoText" VerticalAlignment="Center" Foreground="#555"
                        FontSize="11" Margin="4,0"/>
@@ -170,7 +170,7 @@
                         HorizontalAlignment="Center"
                         VerticalAlignment="Center">
                     <StackPanel HorizontalAlignment="Center">
-                        <TextBlock Text="📋" FontSize="48" HorizontalAlignment="Center"
+                        <TextBlock Text="Preview" FontSize="24" HorizontalAlignment="Center"
                                    Foreground="#555" Margin="0,0,0,12"/>
                         <TextBlock Text="Add slides in the sidebar" Foreground="#666"
                                    FontSize="14" HorizontalAlignment="Center"/>
