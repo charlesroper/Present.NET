@@ -15,9 +15,10 @@ public class SlideItem : INotifyPropertyChanged
         get => _url;
         set
         {
-            if (_url != value)
+            var normalized = value ?? string.Empty;
+            if (_url != normalized)
             {
-                _url = value;
+                _url = normalized;
                 OnPropertyChanged(nameof(Url));
             }
         }
@@ -38,7 +39,7 @@ public class SlideItem : INotifyPropertyChanged
 
     public SlideItem(string url, int number)
     {
-        _url = url;
+        _url = url ?? string.Empty;
         _number = number;
     }
 
