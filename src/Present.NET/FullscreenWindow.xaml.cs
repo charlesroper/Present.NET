@@ -1,9 +1,9 @@
 using System.Windows;
 using System.Windows.Input;
 using Microsoft.Web.WebView2.Core;
-using Present.Models;
+using Present.NET.Models;
 
-namespace Present;
+namespace Present.NET;
 
 /// <summary>
 /// Fullscreen presentation window.

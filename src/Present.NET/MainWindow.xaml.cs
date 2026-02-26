@@ -6,10 +6,10 @@ using System.Windows.Controls;
 using System.Windows.Input;
 using Microsoft.Web.WebView2.Core;
 using Microsoft.Win32;
-using Present.Models;
-using Present.Services;
+using Present.NET.Models;
+using Present.NET.Services;
 
-namespace Present;
+namespace Present.NET;
 
 public partial class MainWindow : Window
 {
@@ -21,6 +21,7 @@ public partial class MainWindow : Window
     private bool _isDirty;
     private double _zoomFactor = 1.0;
     private bool _previewWebViewReady;
+    private string? _remoteControlUrl;
 
     private RemoteControlServer? _server;
     private FullscreenWindow? _fullscreenWindow;
@@ -80,25 +81,58 @@ public partial class MainWindow : Window
     private void StartRemoteServer()
     {
         _server = new RemoteControlServer(9123);
-        _server.OnNext = () => Dispatcher.Invoke(RemoteNext);
-        _server.OnPrev = () => Dispatcher.Invoke(RemotePrev);
-        _server.OnPlay = () => Dispatcher.Invoke(RemotePlay);
-        _server.OnStop = () => Dispatcher.Invoke(RemoteStop);
-        _server.OnZoomIn = () => Dispatcher.Invoke(ZoomIn);
-        _server.OnZoomOut = () => Dispatcher.Invoke(ZoomOut);
-        _server.OnScroll = dy => Dispatcher.Invoke(() => RemoteScroll(dy));
+        _server.OnNext = () => Dispatcher.BeginInvoke(RemoteNext);
+        _server.OnPrev = () => Dispatcher.BeginInvoke(RemotePrev);
+        _server.OnPlay = () => Dispatcher.BeginInvoke(RemotePlay);
+        _server.OnStop = () => Dispatcher.BeginInvoke(RemoteStop);
+        _server.OnZoomIn = () => Dispatcher.BeginInvoke(ZoomIn);
+        _server.OnZoomOut = () => Dispatcher.BeginInvoke(ZoomOut);
+        _server.OnScroll = dy => Dispatcher.BeginInvoke(() => RemoteScroll(dy));
         _server.GetStatus = GetPresentationStatus;
 
         try
         {
             _server.Start();
             var ip = GetLocalIpAddress();
-            RemoteInfoText.Text = $"Remote: http://{ip}:9123/";
+            _remoteControlUrl = $"http://{ip}:9123/";
+            RemoteInfoText.Text = $"Remote: {_remoteControlUrl}";
+            CopyRemoteButton.IsEnabled = true;
         }
         catch (Exception ex)
         {
+            _remoteControlUrl = null;
             RemoteInfoText.Text = "Remote control unavailable";
+            CopyRemoteButton.IsEnabled = false;
             System.Diagnostics.Debug.WriteLine($"Remote server error: {ex.Message}");
+        }
+    }
+
+    private void CopyRemoteButton_Click(object sender, RoutedEventArgs e)
+    {
+        CopyRemoteUrlToClipboard();
+    }
+
+    private void RemoteInfoContainer_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
+    {
+        if (e.ClickCount == 2)
+        {
+            CopyRemoteUrlToClipboard();
+            e.Handled = true;
+        }
+    }
+
+    private void CopyRemoteUrlToClipboard()
+    {
+        if (string.IsNullOrWhiteSpace(_remoteControlUrl))
+            return;
+
+        try
+        {
+            Clipboard.SetText(_remoteControlUrl);
+        }
+        catch (Exception ex)
+        {
+            System.Diagnostics.Debug.WriteLine($"Clipboard copy failed: {ex.Message}");
         }
     }
 
@@ -129,7 +163,7 @@ public partial class MainWindow : Window
         if (_isDirty && _slides.Count > 0)
         {
             var result = MessageBox.Show(
-                "Save changes before closing?", "Present",
+                "Save changes before closing?", "Present.NET",
                 MessageBoxButton.YesNoCancel, MessageBoxImage.Question);
             if (result == MessageBoxResult.Cancel) { e.Cancel = true; return; }
             if (result == MessageBoxResult.Yes) SaveCurrentFile();
@@ -163,7 +197,7 @@ public partial class MainWindow : Window
     {
         if (_isDirty)
         {
-            var r = MessageBox.Show("Save current file first?", "Present",
+            var r = MessageBox.Show("Save current file first?", "Present.NET",
                 MessageBoxButton.YesNoCancel, MessageBoxImage.Question);
             if (r == MessageBoxResult.Cancel) return;
             if (r == MessageBoxResult.Yes) SaveCurrentFile();
@@ -223,7 +257,7 @@ public partial class MainWindow : Window
     {
         if (_slides.Count == 0)
         {
-            MessageBox.Show("No slides to present. Add some URLs first.", "Present",
+            MessageBox.Show("No slides to present. Add some URLs first.", "Present.NET",
                 MessageBoxButton.OK, MessageBoxImage.Information);
             return;
         }
@@ -544,7 +578,7 @@ public partial class MainWindow : Window
         var file = _currentFilePath != null
             ? System.IO.Path.GetFileName(_currentFilePath)
             : "Untitled";
-        Title = $"{dirty}{file} - Present";
+        Title = $"{dirty}{file} - Present.NET";
     }
 
     private void UpdateSlideCountLabel()

@@ -1,11 +1,13 @@
-using Present.Models;
+using Present.NET.Models;
 
-namespace Present.Tests;
+namespace Present.NET.Tests;
 
 public class SlideHelperTests
 {
     [Theory]
     [InlineData("https://example.com/slide.png")]
+    [InlineData("https://example.com/slide.gif")]
+    [InlineData("https://example.com/slide.jpeg")]
     [InlineData("https://example.com/slide.JPG")]
     [InlineData("https://example.com/path/slide.webp?version=1")]
     [InlineData("https://example.com/path/slide.svg#section")]
@@ -28,8 +30,9 @@ public class SlideHelperTests
     [Fact]
     public void GetImageHtml_EncodesHtmlSensitiveCharacters()
     {
-        var html = SlideHelper.GetImageHtml("https://example.com/img.jpg?a=1&b=<bad>");
+        var html = SlideHelper.GetImageHtml("https://example.com/img.jpg?a=1&b=<bad>&q=\"x\"");
 
         Assert.Contains("a=1&amp;b=&lt;bad&gt;", html);
+        Assert.Contains("&quot;x&quot;", html);
     }
 }

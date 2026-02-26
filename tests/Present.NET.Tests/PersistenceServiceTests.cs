@@ -1,6 +1,6 @@
-using Present.Services;
+using Present.NET.Services;
 
-namespace Present.Tests;
+namespace Present.NET.Tests;
 
 public sealed class PersistenceServiceTests : IDisposable
 {
@@ -48,5 +48,33 @@ public sealed class PersistenceServiceTests : IDisposable
         var loaded = PersistenceService.LoadDefault();
 
         Assert.Empty(loaded);
+    }
+
+    [Fact]
+    public void SaveDefault_WritesToConfiguredStorageRoot()
+    {
+        PersistenceService.SaveDefault(["https://example.com/default"]);
+
+        var expectedPath = Path.Combine(_tempDir, "slides.txt");
+        Assert.True(File.Exists(expectedPath));
+        Assert.Equal(["https://example.com/default"], File.ReadAllLines(expectedPath));
+    }
+
+    [Fact]
+    public void SaveTo_AndLoadFrom_RoundTripLongAndUnicodeUrls()
+    {
+        var path = Path.Combine(_tempDir, "unicode.txt");
+        var longUrl = "https://example.com/" + new string('a', 256) + "?q=" + new string('z', 128);
+        var urls = new[]
+        {
+            "https://example.com/caf\u00e9",
+            "https://example.com/na\u00efve",
+            longUrl
+        };
+
+        PersistenceService.SaveTo(path, urls);
+        var loaded = PersistenceService.LoadFrom(path);
+
+        Assert.Equal(urls, loaded);
     }
 }

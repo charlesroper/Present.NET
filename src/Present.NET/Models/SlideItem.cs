@@ -1,6 +1,6 @@
 using System.ComponentModel;
 
-namespace Present.Models;
+namespace Present.NET.Models;
 
 /// <summary>
 /// Represents a single slide entry (a URL) in the presentation.

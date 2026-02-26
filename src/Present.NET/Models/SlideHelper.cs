@@ -1,4 +1,4 @@
-namespace Present.Models;
+namespace Present.NET.Models;
 
 /// <summary>
 /// Utility methods for slide URL handling.

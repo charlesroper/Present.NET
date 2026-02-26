@@ -1,15 +1,18 @@
 using System.IO;
 
-namespace Present.Services;
+namespace Present.NET.Services;
 
 /// <summary>
 /// Handles saving and restoring the slide URL list to/from disk.
-/// Auto-save location: %APPDATA%\Present\slides.txt
+/// Auto-save location: %APPDATA%\Present.NET\slides.txt
 /// </summary>
 public static class PersistenceService
 {
-    private static readonly string DefaultAppDataDir =
+    private static readonly string LegacyAppDataDir =
         Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "Present");
+
+    private static readonly string DefaultAppDataDir =
+        Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "Present.NET");
 
     private static string _appDataDir = DefaultAppDataDir;
 
@@ -20,9 +23,17 @@ public static class PersistenceService
     /// </summary>
     public static List<string> LoadDefault()
     {
-        if (!File.Exists(DefaultSavePath))
-            return new List<string>();
-        return LoadFrom(DefaultSavePath);
+        if (File.Exists(DefaultSavePath))
+            return LoadFrom(DefaultSavePath);
+
+        if (_appDataDir == DefaultAppDataDir)
+        {
+            var legacyPath = Path.Combine(LegacyAppDataDir, "slides.txt");
+            if (File.Exists(legacyPath))
+                return LoadFrom(legacyPath);
+        }
+
+        return new List<string>();
     }
 
     /// <summary>

@@ -1,7 +1,7 @@
 using System.Windows;
 using System.Runtime.CompilerServices;
 
-[assembly: InternalsVisibleTo("Present.Tests")]
+[assembly: InternalsVisibleTo("Present.NET.Tests")]
 
 [assembly:ThemeInfo(
     ResourceDictionaryLocation.None,            //where theme specific resource dictionaries are located

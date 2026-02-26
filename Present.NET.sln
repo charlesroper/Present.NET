@@ -5,13 +5,13 @@ VisualStudioVersion = 17.0.31903.59
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "src", "src", "{827E0CD3-B72D-47B6-A68D-7590B98EB39B}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Present", "src\Present\Present.csproj", "{95C191D2-E5B8-4147-A761-2D91FDBB3B15}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Present.NET", "src\Present.NET\Present.NET.csproj", "{95C191D2-E5B8-4147-A761-2D91FDBB3B15}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "tests", "tests", "{3C6BD722-1635-42EB-806E-CB66B433E5CF}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Present.Tests", "tests\Present.Tests\Present.Tests.csproj", "{68EB78D6-8546-4229-8026-43602C1E5DA3}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Present.NET.Tests", "tests\Present.NET.Tests\Present.NET.Tests.csproj", "{68EB78D6-8546-4229-8026-43602C1E5DA3}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Present.UiTests", "tests\Present.UiTests\Present.UiTests.csproj", "{E658A17C-E5A7-4819-A096-82A628778928}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Present.NET.UiTests", "tests\Present.NET.UiTests\Present.NET.UiTests.csproj", "{E658A17C-E5A7-4819-A096-82A628778928}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

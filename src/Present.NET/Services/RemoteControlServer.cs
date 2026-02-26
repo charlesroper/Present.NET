@@ -1,8 +1,9 @@
-using System.Net;
-using System.Text;
-using System.Text.Json;
+using Microsoft.AspNetCore.Builder;
+using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Hosting;
+using Microsoft.Extensions.Logging;
 
-namespace Present.Services;
+namespace Present.NET.Services;
 
 /// <summary>
 /// Embedded HTTP server on port 9123 providing remote control of the presentation.
@@ -10,12 +11,12 @@ namespace Present.Services;
 /// </summary>
 public class RemoteControlServer : IDisposable
 {
-    private HttpListener _listener;
     private readonly int _port;
     private CancellationTokenSource? _cts;
-    private Task? _listenerTask;
+    private WebApplication? _app;
     private bool _disposed;
     private bool _started;
+    private readonly object _lifecycleLock = new();
 
     // Actions dispatched to the UI
     public Action? OnNext { get; set; }
@@ -32,173 +33,108 @@ public class RemoteControlServer : IDisposable
     public RemoteControlServer(int port = 9123)
     {
         _port = port;
-        _listener = CreateListener(port, bindAnyHost: true);
     }
 
     public void Start()
     {
-        if (_disposed) throw new ObjectDisposedException(nameof(RemoteControlServer));
-        if (_started) return;
+        lock (_lifecycleLock)
+        {
+            if (_disposed) throw new ObjectDisposedException(nameof(RemoteControlServer));
+            if (_started) return;
 
-        _cts = new CancellationTokenSource();
-        try
-        {
-            _listener.Start();
+            _cts = new CancellationTokenSource();
+            _app = CreateWebApp();
+            _app.StartAsync(_cts.Token).GetAwaiter().GetResult();
+            _started = true;
         }
-        catch (HttpListenerException)
-        {
-            // Try localhost only as fallback.
-            _listener.Close();
-            _listener = CreateListener(_port, bindAnyHost: false);
-            _listener.Start();
-        }
-        _started = true;
-        _listenerTask = Task.Run(() => ListenLoop(_cts.Token));
     }
 
     public void Stop()
     {
-        if (!_started) return;
+        WebApplication? appToStop;
+        CancellationTokenSource? ctsToCancel;
 
-        _cts?.Cancel();
-        try
+        lock (_lifecycleLock)
         {
-            _listener.Stop();
-        }
-        catch (ObjectDisposedException)
-        {
-            // Listener already disposed; stopping is complete.
-        }
-        finally
-        {
+            if (!_started) return;
             _started = false;
+
+            appToStop = _app;
+            _app = null;
+
+            ctsToCancel = _cts;
+            _cts = null;
         }
+
+        try { ctsToCancel?.Cancel(); } catch { }
+
+        if (appToStop != null)
+        {
+            _ = Task.Run(async () =>
+            {
+                try
+                {
+                    await appToStop.StopAsync();
+                }
+                catch { }
+                finally
+                {
+                    try { await appToStop.DisposeAsync(); } catch { }
+                }
+            });
+        }
+
+        ctsToCancel?.Dispose();
     }
 
-    private async Task ListenLoop(CancellationToken ct)
+    private WebApplication CreateWebApp()
     {
-        while (!ct.IsCancellationRequested)
+        var options = new WebApplicationOptions { Args = [] };
+        var builder = WebApplication.CreateSlimBuilder(options);
+        builder.Logging.ClearProviders();
+        builder.WebHost.UseKestrel(server =>
         {
-            HttpListenerContext? ctx = null;
-            try
-            {
-                ctx = await _listener.GetContextAsync().ConfigureAwait(false);
-            }
-            catch (HttpListenerException)
-            {
-                break;
-            }
-            catch (ObjectDisposedException)
-            {
-                break;
-            }
+            server.ListenAnyIP(_port);
+        });
 
-            _ = Task.Run(() => HandleRequest(ctx), ct);
-        }
+        var app = builder.Build();
+
+        app.MapGet("/", () => Results.Content(GetControlPageHtml(), "text/html; charset=utf-8"));
+        app.MapGet("/next", (HttpContext ctx) => ExecuteAndReturnStatus(ctx, OnNext));
+        app.MapGet("/prev", (HttpContext ctx) => ExecuteAndReturnStatus(ctx, OnPrev));
+        app.MapGet("/play", (HttpContext ctx) => ExecuteAndReturnStatus(ctx, OnPlay));
+        app.MapGet("/stop", (HttpContext ctx) => ExecuteAndReturnStatus(ctx, OnStop));
+        app.MapGet("/zoomin", (HttpContext ctx) => ExecuteAndReturnStatus(ctx, OnZoomIn));
+        app.MapGet("/zoomout", (HttpContext ctx) => ExecuteAndReturnStatus(ctx, OnZoomOut));
+        app.MapGet("/scroll", (HttpContext ctx) =>
+        {
+            if (TryGetIntQueryParam(ctx.Request, "dy", out var dy))
+                OnScroll?.Invoke(dy);
+
+            return BuildStatusResult(ctx);
+        });
+        app.MapGet("/status", (HttpContext ctx) => BuildStatusResult(ctx));
+
+        return app;
     }
 
-    private void HandleRequest(HttpListenerContext ctx)
+    private IResult ExecuteAndReturnStatus(HttpContext ctx, Action? callback)
     {
-        var req = ctx.Request;
-        var resp = ctx.Response;
-        var path = req.Url?.AbsolutePath ?? "/";
-        var query = req.Url?.Query ?? "";
-
-        try
-        {
-            switch (path)
-            {
-                case "/":
-                    ServeHtml(resp, GetControlPageHtml());
-                    return;
-
-                case "/next":
-                    OnNext?.Invoke();
-                    break;
-                case "/prev":
-                    OnPrev?.Invoke();
-                    break;
-                case "/play":
-                    OnPlay?.Invoke();
-                    break;
-                case "/stop":
-                    OnStop?.Invoke();
-                    break;
-                case "/zoomin":
-                    OnZoomIn?.Invoke();
-                    break;
-                case "/zoomout":
-                    OnZoomOut?.Invoke();
-                    break;
-                case "/scroll":
-                    if (TryParseQueryParam(query, "dy", out var dy))
-                        OnScroll?.Invoke(dy);
-                    break;
-                case "/status":
-                    // Just fall through to JSON response
-                    break;
-                default:
-                    resp.StatusCode = 404;
-                    resp.Close();
-                    return;
-            }
-
-            // Return JSON status
-            var status = GetStatus?.Invoke() ?? new PresentationStatus();
-            ServeJson(resp, status);
-        }
-        catch
-        {
-            try { resp.StatusCode = 500; resp.Close(); } catch { }
-        }
+        callback?.Invoke();
+        return BuildStatusResult(ctx);
     }
 
-    private static bool TryParseQueryParam(string query, string param, out int value)
+    private IResult BuildStatusResult(HttpContext ctx)
+    {
+        ctx.Response.Headers["Access-Control-Allow-Origin"] = "*";
+        var status = GetStatus?.Invoke() ?? new PresentationStatus();
+        return Results.Json(status);
+    }
+
+    private static bool TryGetIntQueryParam(HttpRequest request, string param, out int value)
     {
         value = 0;
-        if (string.IsNullOrEmpty(query)) return false;
-        var qs = query.TrimStart('?');
-        foreach (var part in qs.Split('&'))
-        {
-            var kv = part.Split('=');
-            if (kv.Length == 2 && kv[0] == param && int.TryParse(kv[1], out int val))
-            {
-                value = val;
-                return true;
-            }
-        }
-        return false;
-    }
-
-    private static HttpListener CreateListener(int port, bool bindAnyHost)
-    {
-        var listener = new HttpListener();
-        var hostPrefix = bindAnyHost ? "+" : "localhost";
-        listener.Prefixes.Add($"http://{hostPrefix}:{port}/");
-        return listener;
-    }
-
-    private static void ServeHtml(HttpListenerResponse resp, string html)
-    {
-        var bytes = Encoding.UTF8.GetBytes(html);
-        resp.ContentType = "text/html; charset=utf-8";
-        resp.ContentLength64 = bytes.Length;
-        resp.OutputStream.Write(bytes);
-        resp.Close();
-    }
-
-    private static void ServeJson(HttpListenerResponse resp, object obj)
-    {
-        var json = JsonSerializer.Serialize(obj, new JsonSerializerOptions
-        {
-            PropertyNamingPolicy = JsonNamingPolicy.CamelCase
-        });
-        var bytes = Encoding.UTF8.GetBytes(json);
-        resp.ContentType = "application/json; charset=utf-8";
-        resp.Headers.Add("Access-Control-Allow-Origin", "*");
-        resp.ContentLength64 = bytes.Length;
-        resp.OutputStream.Write(bytes);
-        resp.Close();
+        return int.TryParse(request.Query[param], out value);
     }
 
     private static string GetControlPageHtml() => """
@@ -207,7 +143,7 @@ public class RemoteControlServer : IDisposable
         <head>
           <meta charset="utf-8">
           <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
-          <title>Present Remote</title>
+          <title>Present.NET Remote</title>
           <style>
             * { box-sizing: border-box; margin: 0; padding: 0; }
             body {
@@ -270,7 +206,7 @@ public class RemoteControlServer : IDisposable
           </style>
         </head>
         <body>
-          <h1>Present Remote</h1>
+          <h1>Present.NET Remote</h1>
           <div id="slide-info">Connecting...</div>
           <div class="grid">
             <button onclick="cmd('prev')">Prev</button>
@@ -333,8 +269,6 @@ public class RemoteControlServer : IDisposable
         if (!_disposed)
         {
             Stop();
-            _listener.Close();
-            _cts?.Dispose();
             _disposed = true;
         }
     }
