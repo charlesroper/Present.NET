@@ -91,11 +91,17 @@ This project utilizes specialized skills located in `.agents/skills/`. Before pe
 
 ### Checking and Installing Skills
 1. **List installed skills**: Use the `skill` tool or look at `skills-lock.json`.
-2. **Find/Install missing skills**: Use the `find-skills` skill to search for and install project-relevant skills:
-   - `publishing-wpf-apps`: For build and packaging guidance.
-   - `cbeams-git-commit-messages`: For consistent history.
-   - `on-writing-well`: For clear documentation and release notes.
-3. **Execution**: If a skill is missing, ask the user to provide the skill source or use the `find-skills` workflow to acquire it.
+2. **Install missing skills**: Use the Skills CLI (`npx skills add`) to install the required project skills:
+   - **Publishing guidance**: `npx skills add christian289/dotnet-with-claudecode@publishing-wpf-apps`
+   - **Commit messages**: `npx skills add charlesroper/skills@cbeams-git-commit-messages`
+   - **Documentation/Release notes**: `npx skills add charlesroper/skills@on-writing-well`
+3. **Execution**: If a skill is missing, run the appropriate command above to install it to your environment. Use `npx skills find <query>` to discover other relevant skills.
+
+## Agent Skills (Detailed)
+
+- `publishing-wpf-apps`: Guides WPF application publishing and installer options.
+- `cbeams-git-commit-messages`: Ensures consistent, imperative-mood Git history.
+- `on-writing-well`: Applied to all user-facing documentation and release notes for clarity.
 
 ## Versioning
 
