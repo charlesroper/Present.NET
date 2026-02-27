@@ -67,6 +67,7 @@ public class SlideItem : INotifyPropertyChanged
                 OnPropertyChanged(nameof(CacheLabel));
                 OnPropertyChanged(nameof(CacheSummary));
                 OnPropertyChanged(nameof(CacheStatusTooltip));
+                OnPropertyChanged(nameof(IsCaching));
             }
         }
     }
@@ -78,6 +79,8 @@ public class SlideItem : INotifyPropertyChanged
         SlideCacheState.Failed => "Failed",
         _ => ""
     };
+
+    public bool IsCaching => CacheState == SlideCacheState.Caching;
 
     public SlideSource Source
     {

@@ -611,7 +611,10 @@ public partial class MainWindow : Window
             }
 
             foreach (var slide in _slides)
+            {
                 slide.CacheState = SlideCacheState.Unknown;
+                slide.Source = SlideSource.Unknown;
+            }
 
             CacheStatusText.Text = "Cache cleared";
         }

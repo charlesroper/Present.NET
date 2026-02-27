@@ -3,6 +3,22 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              StartupUri="MainWindow.xaml">
     <Application.Resources>
+        <FontFamily x:Key="DefaultFontFamily">Segoe UI Variable, Segoe UI</FontFamily>
+
+        <Style TargetType="TextBlock">
+            <Setter Property="FontFamily" Value="{StaticResource DefaultFontFamily}"/>
+            <Setter Property="FontWeight" Value="Medium"/>
+        </Style>
+
+        <Style TargetType="TextBox">
+            <Setter Property="FontFamily" Value="{StaticResource DefaultFontFamily}"/>
+            <Setter Property="FontWeight" Value="Medium"/>
+        </Style>
+
+        <Style TargetType="Label">
+            <Setter Property="FontFamily" Value="{StaticResource DefaultFontFamily}"/>
+            <Setter Property="FontWeight" Value="Medium"/>
+        </Style>
         <SolidColorBrush x:Key="AppWindowBackgroundBrush" Color="#F5F5F5"/>
         <SolidColorBrush x:Key="MenuBackgroundBrush" Color="#FFFFFF"/>
         <SolidColorBrush x:Key="MenuPopupBackgroundBrush" Color="#FFFFFF"/>

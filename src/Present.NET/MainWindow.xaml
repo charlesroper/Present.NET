@@ -336,6 +336,11 @@
             <Setter Property="Background" Value="{DynamicResource ToolbarSeparatorBrush}"/>
             <Setter Property="VerticalAlignment" Value="Center"/>
         </Style>
+
+        <Storyboard x:Key="SpinAnimation" RepeatBehavior="Forever">
+            <DoubleAnimation Storyboard.TargetProperty="(UIElement.RenderTransform).(RotateTransform.Angle)"
+                             From="0" To="360" Duration="0:0:1"/>
+        </Storyboard>
     </Window.Resources>
     <DockPanel>
         <!-- Menu -->
@@ -554,7 +559,7 @@
                                 <Grid.ColumnDefinitions>
                                     <ColumnDefinition Width="32"/>
                                     <ColumnDefinition Width="*"/>
-                                    <ColumnDefinition Width="100"/>
+<ColumnDefinition Width="45"/>
                                 </Grid.ColumnDefinitions>
                                 <TextBlock Grid.Column="0"
                                            Text="{Binding Number}"
@@ -587,14 +592,44 @@
                                         </Style>
                                     </TextBox.Style>
                                 </TextBox>
-                                <TextBlock Grid.Column="2"
-                                           Text="{Binding CacheSummary}"
-                                           ToolTip="{Binding CacheStatusTooltip}"
-                                           Foreground="{DynamicResource MutedTextBrush}"
-                                           FontSize="10"
-                                           HorizontalAlignment="Right"
-                                           VerticalAlignment="Center"
-                                           Margin="0,0,8,0"/>
+                                <ContentControl Grid.Column="2"
+                                               ToolTip="{Binding CacheStatusTooltip}"
+                                               HorizontalAlignment="Right"
+                                               VerticalAlignment="Center"
+                                               Margin="0,0,8,0">
+                                    <ContentControl.Style>
+                                        <Style TargetType="ContentControl">
+                                            <Setter Property="Content">
+                                                <Setter.Value>
+                                                    <TextBlock Text="{Binding CacheSummary}"
+                                                               Foreground="{DynamicResource MutedTextBrush}"
+                                                               FontSize="10"/>
+                                                </Setter.Value>
+                                            </Setter>
+                                            <Style.Triggers>
+                                                <DataTrigger Binding="{Binding IsCaching}" Value="True">
+                                                    <Setter Property="Content">
+                                                        <Setter.Value>
+                                                            <TextBlock FontFamily="Segoe Fluent Icons" Text="&#xE72C;"
+                                                                       FontSize="10"
+                                                                       Foreground="{DynamicResource MutedTextBrush}"
+                                                                       RenderTransformOrigin="0.5,0.5">
+                                                                <TextBlock.RenderTransform>
+                                                                    <RotateTransform/>
+                                                                </TextBlock.RenderTransform>
+                                                                <TextBlock.Triggers>
+                                                                    <EventTrigger RoutedEvent="Loaded">
+                                                                        <BeginStoryboard Storyboard="{StaticResource SpinAnimation}"/>
+                                                                    </EventTrigger>
+                                                                </TextBlock.Triggers>
+                                                            </TextBlock>
+                                                        </Setter.Value>
+                                                    </Setter>
+                                                </DataTrigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </ContentControl.Style>
+                                </ContentControl>
                             </Grid>
                         </DataTemplate>
                     </ListBox.ItemTemplate>
