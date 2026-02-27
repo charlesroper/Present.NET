@@ -29,7 +29,7 @@ For contributor/agent workflow guidance, see `AGENTS.md`.
 If you are new to .NET, follow these steps exactly.
 
 1. Install the **.NET 8 SDK**: https://dotnet.microsoft.com/download/dotnet/8.0
-2. Open a terminal in this repository root (`present`).
+2. Open a terminal in this repository root (`Present.NET`).
 3. Verify .NET is installed:
 
 ```powershell
@@ -60,8 +60,8 @@ dotnet run --project src/Present.NET/Present.NET.csproj
 
 ```powershell
 # Clone and build
-git clone https://github.com/charlesroper/present.git
-cd present
+git clone https://github.com/charlesroper/Present.NET.git
+cd Present.NET
 dotnet restore
 dotnet build Present.NET.sln -c Release
 dotnet format Present.NET.sln
@@ -232,7 +232,7 @@ All endpoints (except `/`) return a JSON status object.
 ## Project Structure
 
 ```
-Present/
+Present.NET/
 ├── Present.NET.sln
 ├── README.md
 ├── tests/
