@@ -694,6 +694,14 @@ public partial class MainWindow : Window
         if (string.IsNullOrWhiteSpace(slide.Url) || slide.Url == "https://")
         {
             slide.CacheState = SlideCacheState.Unknown;
+            slide.Source = SlideSource.Unknown;
+            return;
+        }
+
+        if (!SlideHelper.IsImageUrl(slide.Url))
+        {
+            slide.CacheState = SlideCacheState.Unknown;
+            slide.Source = SlideSource.Network;
             return;
         }
 
@@ -702,29 +710,18 @@ public partial class MainWindow : Window
             slide.CacheState = SlideCacheState.Caching;
             slide.Source = SlideSource.Unknown;
 
-            if (SlideHelper.IsImageUrl(slide.Url))
+            if (!forceRefresh && _slideCacheService.TryGetCachedPath(slide.Url) != null)
             {
-                if (!forceRefresh && _slideCacheService.TryGetCachedPath(slide.Url) != null)
-                {
-                    slide.CacheState = SlideCacheState.Cached;
-                    slide.Source = SlideSource.Cache;
-                    return;
-                }
-
-                if (forceRefresh)
-                    await _slideCacheService.RemoveCachedAsync(slide.Url);
-
-                await _slideCacheService.EnsureCachedAsync(slide.Url, cancellationToken);
+                slide.CacheState = SlideCacheState.Cached;
                 slide.Source = SlideSource.Cache;
+                return;
             }
-            else
-            {
-                if (forceRefresh && _previewWebViewReady && PreviewWebView.CoreWebView2?.Profile != null)
-                    await PreviewWebView.CoreWebView2.Profile.ClearBrowsingDataAsync(CoreWebView2BrowsingDataKinds.DiskCache);
 
-                await WarmPageCacheAsync(slide.Url, cancellationToken);
-                slide.Source = SlideSource.Network;
-            }
+            if (forceRefresh)
+                await _slideCacheService.RemoveCachedAsync(slide.Url);
+
+            await _slideCacheService.EnsureCachedAsync(slide.Url, cancellationToken);
+            slide.Source = SlideSource.Cache;
 
             slide.CacheState = SlideCacheState.Cached;
         }
@@ -762,29 +759,6 @@ public partial class MainWindow : Window
         return string.IsNullOrWhiteSpace(cachedPath)
             ? originalUrl
             : new Uri(cachedPath).AbsoluteUri;
-    }
-
-    private async Task WarmPageCacheAsync(string url, CancellationToken cancellationToken)
-    {
-        if (!_previewWebViewReady || PreloadWebView.CoreWebView2 == null)
-            return;
-
-        var tcs = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
-        EventHandler<CoreWebView2NavigationCompletedEventArgs>? handler = null;
-        handler = (_, args) =>
-        {
-            PreloadWebView.CoreWebView2.NavigationCompleted -= handler;
-            if (args.IsSuccess)
-                tcs.TrySetResult(true);
-            else
-                tcs.TrySetException(new InvalidOperationException($"Navigation failed: {args.WebErrorStatus}"));
-        };
-
-        PreloadWebView.CoreWebView2.NavigationCompleted += handler;
-        using var reg = cancellationToken.Register(() => tcs.TrySetCanceled(cancellationToken));
-        PreloadWebView.CoreWebView2.Navigate(url);
-
-        await tcs.Task.WaitAsync(TimeSpan.FromSeconds(30), cancellationToken);
     }
 
     // -----------------------------------------------------------------------

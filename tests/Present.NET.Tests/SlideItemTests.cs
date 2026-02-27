@@ -80,14 +80,14 @@ public class SlideItemTests
         var slide = new SlideItem("https://example.com", 1);
 
         slide.Source = SlideSource.Network;
-        Assert.Equal("network", slide.SourceLabel);
+        Assert.Equal("Live", slide.SourceLabel);
 
         slide.Source = SlideSource.Cache;
-        Assert.Equal("cache", slide.SourceLabel);
+        Assert.Equal("Cached", slide.SourceLabel);
     }
 
     [Fact]
-    public void CacheSummary_ShowsBothCacheAndSource()
+    public void CacheSummary_ShowsCachedForLocalSlides()
     {
         var slide = new SlideItem("https://example.com", 1)
         {
@@ -95,6 +95,65 @@ public class SlideItemTests
             Source = SlideSource.Cache
         };
 
-        Assert.Equal("Cached (cache)", slide.CacheSummary);
+        Assert.Equal("Cached", slide.CacheSummary);
+    }
+
+    [Fact]
+    public void CacheSummary_ShowsLiveForNetworkSlides()
+    {
+        var slide = new SlideItem("https://example.com", 1)
+        {
+            CacheState = SlideCacheState.Cached,
+            Source = SlideSource.Network
+        };
+
+        Assert.Equal("Live", slide.CacheSummary);
+    }
+
+    [Fact]
+    public void CacheStatusTooltip_ExplainsCachedState()
+    {
+        var slide = new SlideItem("https://example.com", 1)
+        {
+            CacheState = SlideCacheState.Cached,
+            Source = SlideSource.Cache
+        };
+
+        Assert.Equal("This slide is saved on your computer. It should open quickly during your presentation, even if your internet connection is slow.", slide.CacheStatusTooltip);
+    }
+
+    [Fact]
+    public void CacheStatusTooltip_ExplainsLiveState()
+    {
+        var slide = new SlideItem("https://example.com", 1)
+        {
+            CacheState = SlideCacheState.Cached,
+            Source = SlideSource.Network
+        };
+
+        Assert.Equal("This slide is a live web page. In Present.NET, web pages are always live and load from the internet each time you open them, so a stable connection is important.", slide.CacheStatusTooltip);
+    }
+
+    [Fact]
+    public void CacheStatusTooltip_ExplainsFailedState()
+    {
+        var slide = new SlideItem("https://example.com", 1)
+        {
+            CacheState = SlideCacheState.Failed,
+            Source = SlideSource.Failed
+        };
+
+        Assert.Equal("This slide could not be prepared. Check the slide address and your internet connection, then try again.", slide.CacheStatusTooltip);
+    }
+
+    [Fact]
+    public void CacheStatusTooltip_ExplainsCachingState()
+    {
+        var slide = new SlideItem("https://example.com", 1)
+        {
+            CacheState = SlideCacheState.Caching
+        };
+
+        Assert.Equal("This slide is being prepared right now. It will be ready in a moment.", slide.CacheStatusTooltip);
     }
 }

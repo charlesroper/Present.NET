@@ -282,6 +282,60 @@
                 </Setter.Value>
             </Setter>
         </Style>
+
+        <Style x:Key="ToolbarButtonStyle" TargetType="Button">
+            <Setter Property="Background" Value="{DynamicResource ButtonBackgroundBrush}"/>
+            <Setter Property="Foreground" Value="{DynamicResource ToolbarForegroundBrush}"/>
+            <Setter Property="BorderBrush" Value="{DynamicResource ButtonBorderBrush}"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="Padding" Value="8,4"/>
+            <Setter Property="Margin" Value="0"/>
+            <Setter Property="FocusVisualStyle" Value="{x:Null}"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="ButtonBorder"
+                                Background="{TemplateBinding Background}"
+                                BorderBrush="{TemplateBinding BorderBrush}"
+                                BorderThickness="{TemplateBinding BorderThickness}">
+                            <ContentPresenter HorizontalAlignment="Center"
+                                              VerticalAlignment="Center"
+                                              Margin="{TemplateBinding Padding}"
+                                              RecognizesAccessKey="True"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="ButtonBorder" Property="Background" Value="{DynamicResource ButtonHoverBackgroundBrush}"/>
+                                <Setter TargetName="ButtonBorder" Property="BorderBrush" Value="{DynamicResource ButtonHoverBorderBrush}"/>
+                            </Trigger>
+                            <Trigger Property="IsPressed" Value="True">
+                                <Setter TargetName="ButtonBorder" Property="Background" Value="{DynamicResource ButtonPressedBackgroundBrush}"/>
+                                <Setter TargetName="ButtonBorder" Property="BorderBrush" Value="{DynamicResource ButtonPressedBorderBrush}"/>
+                            </Trigger>
+                            <Trigger Property="IsKeyboardFocused" Value="True">
+                                <Setter TargetName="ButtonBorder" Property="BorderBrush" Value="{DynamicResource ButtonHoverBorderBrush}"/>
+                            </Trigger>
+                            <Trigger Property="IsEnabled" Value="False">
+                                <Setter TargetName="ButtonBorder" Property="Opacity" Value="0.55"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+            <Style.Triggers>
+                <Trigger Property="IsEnabled" Value="False">
+                    <Setter Property="Opacity" Value="0.55"/>
+                </Trigger>
+            </Style.Triggers>
+        </Style>
+
+        <Style x:Key="ToolbarSeparatorStyle" TargetType="Border">
+            <Setter Property="Width" Value="1"/>
+            <Setter Property="Height" Value="22"/>
+            <Setter Property="Margin" Value="10,0"/>
+            <Setter Property="Background" Value="{DynamicResource ToolbarSeparatorBrush}"/>
+            <Setter Property="VerticalAlignment" Value="Center"/>
+        </Style>
     </Window.Resources>
     <DockPanel>
         <!-- Menu -->
@@ -325,82 +379,86 @@
                 BorderBrush="{DynamicResource PanelBorderBrush}"
                 BorderThickness="0,0,0,1"
                 Padding="6,4">
-            <Border.Resources>
-                <Style x:Key="ToolbarButtonStyle" TargetType="Button">
-                    <Setter Property="Background" Value="{DynamicResource ButtonBackgroundBrush}"/>
-                    <Setter Property="Foreground" Value="{DynamicResource ToolbarForegroundBrush}"/>
-                    <Setter Property="BorderBrush" Value="{DynamicResource ButtonBorderBrush}"/>
-                    <Setter Property="BorderThickness" Value="1"/>
-                    <Setter Property="Padding" Value="8,4"/>
-                    <Setter Property="Margin" Value="0"/>
-                    <Setter Property="FocusVisualStyle" Value="{x:Null}"/>
-                    <Setter Property="Template">
-                        <Setter.Value>
-                            <ControlTemplate TargetType="Button">
-                                <Border x:Name="ButtonBorder"
-                                        Background="{TemplateBinding Background}"
-                                        BorderBrush="{TemplateBinding BorderBrush}"
-                                        BorderThickness="{TemplateBinding BorderThickness}">
-                                    <ContentPresenter HorizontalAlignment="Center"
-                                                      VerticalAlignment="Center"
-                                                      Margin="{TemplateBinding Padding}"
-                                                      RecognizesAccessKey="True"/>
-                                </Border>
-                                <ControlTemplate.Triggers>
-                                    <Trigger Property="IsMouseOver" Value="True">
-                                        <Setter TargetName="ButtonBorder" Property="Background" Value="{DynamicResource ButtonHoverBackgroundBrush}"/>
-                                        <Setter TargetName="ButtonBorder" Property="BorderBrush" Value="{DynamicResource ButtonHoverBorderBrush}"/>
-                                    </Trigger>
-                                    <Trigger Property="IsPressed" Value="True">
-                                        <Setter TargetName="ButtonBorder" Property="Background" Value="{DynamicResource ButtonPressedBackgroundBrush}"/>
-                                        <Setter TargetName="ButtonBorder" Property="BorderBrush" Value="{DynamicResource ButtonPressedBorderBrush}"/>
-                                    </Trigger>
-                                    <Trigger Property="IsKeyboardFocused" Value="True">
-                                        <Setter TargetName="ButtonBorder" Property="BorderBrush" Value="{DynamicResource ButtonHoverBorderBrush}"/>
-                                    </Trigger>
-                                    <Trigger Property="IsEnabled" Value="False">
-                                        <Setter TargetName="ButtonBorder" Property="Opacity" Value="0.55"/>
-                                    </Trigger>
-                                </ControlTemplate.Triggers>
-                            </ControlTemplate>
-                        </Setter.Value>
-                    </Setter>
-                    <Style.Triggers>
-                        <Trigger Property="IsEnabled" Value="False">
-                            <Setter Property="Opacity" Value="0.55"/>
-                        </Trigger>
-                    </Style.Triggers>
-                </Style>
-                <Style x:Key="ToolbarSeparatorStyle" TargetType="Border">
-                    <Setter Property="Width" Value="1"/>
-                    <Setter Property="Height" Value="22"/>
-                    <Setter Property="Margin" Value="10,0"/>
-                    <Setter Property="Background" Value="{DynamicResource ToolbarSeparatorBrush}"/>
-                    <Setter Property="VerticalAlignment" Value="Center"/>
-                </Style>
-            </Border.Resources>
-            <ScrollViewer Background="{DynamicResource ToolbarBackgroundBrush}"
-                          HorizontalScrollBarVisibility="Auto"
-                          VerticalScrollBarVisibility="Disabled"
-                          CanContentScroll="False">
-                <StackPanel Orientation="Horizontal">
-                    <Button Style="{StaticResource ToolbarButtonStyle}" Click="Play_Click" ToolTip="Play Presentation (F5)" Content="Play"/>
-                    <Border Style="{StaticResource ToolbarSeparatorStyle}"/>
-                    <Button Style="{StaticResource ToolbarButtonStyle}" Click="AddSlide_Click" ToolTip="Add Slide" Content="+ Add Slide"/>
-                    <Button Style="{StaticResource ToolbarButtonStyle}" Click="RemoveSlide_Click" ToolTip="Remove Selected Slide" Content="Remove"/>
-                    <Border Style="{StaticResource ToolbarSeparatorStyle}"/>
-                    <Button Style="{StaticResource ToolbarButtonStyle}" Click="MoveUp_Click" ToolTip="Move Slide Up" Content="Up"/>
-                    <Button Style="{StaticResource ToolbarButtonStyle}" Click="MoveDown_Click" ToolTip="Move Slide Down" Content="Down"/>
-                    <Border Style="{StaticResource ToolbarSeparatorStyle}"/>
-                    <Button Style="{StaticResource ToolbarButtonStyle}" Click="ZoomIn_Click" ToolTip="Zoom In (Ctrl+=)" Content="Zoom +"/>
-                    <Button Style="{StaticResource ToolbarButtonStyle}" Click="ZoomOut_Click" ToolTip="Zoom Out (Ctrl+-)" Content="Zoom -"/>
-                    <Button Style="{StaticResource ToolbarButtonStyle}" Click="ZoomReset_Click" ToolTip="Reset Zoom (Ctrl+0)" Content="Reset"/>
-                    <Border Style="{StaticResource ToolbarSeparatorStyle}"/>
-                    <Button x:Name="ReloadSlideCacheButton" Style="{StaticResource ToolbarButtonStyle}" Click="ReloadSelectedSlideCache_Click" ToolTip="Purge and re-cache selected slide" Content="Reload Slide"/>
-                    <Button x:Name="RecacheAllButton" Style="{StaticResource ToolbarButtonStyle}" Click="RecacheAll_Click" ToolTip="Purge and re-cache all slides" Content="Re-cache"/>
-                    <Button x:Name="ClearCacheButton" Style="{StaticResource ToolbarButtonStyle}" Click="ClearCache_Click" ToolTip="Clear all cached slide content" Content="Clear Cache"/>
-                    <TextBlock x:Name="CacheStatusText" VerticalAlignment="Center" Foreground="{DynamicResource SecondaryTextBrush}" FontSize="11" Margin="6,0,0,0"/>
-                    <Border Style="{StaticResource ToolbarSeparatorStyle}"/>
+                <ScrollViewer Background="{DynamicResource ToolbarBackgroundBrush}"
+                              HorizontalScrollBarVisibility="Auto"
+                              VerticalScrollBarVisibility="Disabled"
+                              CanContentScroll="False">
+                    <StackPanel Orientation="Horizontal">
+                        <Button Style="{StaticResource ToolbarButtonStyle}" Click="Play_Click" ToolTip="Play Presentation (F5)" Padding="10,4">
+                            <StackPanel Orientation="Horizontal">
+                                <TextBlock FontFamily="Segoe Fluent Icons" Text="&#xE768;" FontSize="14" VerticalAlignment="Center" Margin="0,0,6,0"/>
+                                <TextBlock Text="Play" VerticalAlignment="Center"/>
+                            </StackPanel>
+                        </Button>
+                        <Border Style="{StaticResource ToolbarSeparatorStyle}"/>
+                        <Button Style="{StaticResource ToolbarButtonStyle}" Click="AddSlide_Click" ToolTip="Add Slide" Padding="10,4">
+                            <StackPanel Orientation="Horizontal">
+                                <TextBlock FontFamily="Segoe Fluent Icons" Text="&#xE710;" FontSize="14" VerticalAlignment="Center" Margin="0,0,6,0"/>
+                                <TextBlock Text="Add Slide" VerticalAlignment="Center"/>
+                            </StackPanel>
+                        </Button>
+                        <Button Style="{StaticResource ToolbarButtonStyle}" Click="RemoveSlide_Click" ToolTip="Remove Selected Slide" Padding="10,4">
+                            <StackPanel Orientation="Horizontal">
+                                <TextBlock FontFamily="Segoe Fluent Icons" Text="&#xE74D;" FontSize="14" VerticalAlignment="Center" Margin="0,0,6,0"/>
+                                <TextBlock Text="Remove" VerticalAlignment="Center"/>
+                            </StackPanel>
+                        </Button>
+                        <Border Style="{StaticResource ToolbarSeparatorStyle}"/>
+                        <Button Style="{StaticResource ToolbarButtonStyle}" Click="MoveUp_Click" ToolTip="Move Slide Up" Padding="8,4" AutomationProperties.Name="Move Slide Up">
+                            <TextBlock FontFamily="Segoe Fluent Icons" Text="&#xE70E;" FontSize="14"/>
+                        </Button>
+                        <Button Style="{StaticResource ToolbarButtonStyle}" Click="MoveDown_Click" ToolTip="Move Slide Down" Padding="8,4" AutomationProperties.Name="Move Slide Down">
+                            <TextBlock FontFamily="Segoe Fluent Icons" Text="&#xE70D;" FontSize="14"/>
+                        </Button>
+                        <Border Style="{StaticResource ToolbarSeparatorStyle}"/>
+                        <Button Style="{StaticResource ToolbarButtonStyle}" Click="ZoomIn_Click" ToolTip="Zoom In (Ctrl+=)" Padding="8,4" AutomationProperties.Name="Zoom In">
+                            <TextBlock FontFamily="Segoe Fluent Icons" Text="&#xE8A3;" FontSize="14"/>
+                        </Button>
+                        <Button Style="{StaticResource ToolbarButtonStyle}" Click="ZoomOut_Click" ToolTip="Zoom Out (Ctrl+-)" Padding="8,4" AutomationProperties.Name="Zoom Out">
+                            <TextBlock FontFamily="Segoe Fluent Icons" Text="&#xE71F;" FontSize="14"/>
+                        </Button>
+                        <Button Style="{StaticResource ToolbarButtonStyle}" Click="ZoomReset_Click" ToolTip="Reset Zoom (Ctrl+0)" Padding="8,4" AutomationProperties.Name="Reset Zoom">
+                            <TextBlock FontFamily="Segoe Fluent Icons" Text="&#xE777;" FontSize="14"/>
+                        </Button>
+                        <Border Style="{StaticResource ToolbarSeparatorStyle}"/>
+                        <Button x:Name="ReloadSlideCacheButton" Style="{StaticResource ToolbarButtonStyle}" Click="ReloadSelectedSlideCache_Click" ToolTip="Purge and re-cache selected slide" Padding="10,4">
+                            <StackPanel Orientation="Horizontal">
+                                <TextBlock FontFamily="Segoe Fluent Icons" Text="&#xE72C;" FontSize="14" VerticalAlignment="Center" Margin="0,0,6,0"/>
+                                <TextBlock Text="Reload Slide" VerticalAlignment="Center"/>
+                            </StackPanel>
+                        </Button>
+                        <Button x:Name="RecacheAllButton" Style="{StaticResource ToolbarButtonStyle}" Click="RecacheAll_Click" ToolTip="Purge and re-cache all slides" Padding="10,4">
+                            <StackPanel Orientation="Horizontal">
+                                <TextBlock FontFamily="Segoe Fluent Icons" Text="&#xE72C;" FontSize="14" VerticalAlignment="Center" Margin="0,0,6,0"/>
+                                <TextBlock Text="Re-cache" VerticalAlignment="Center"/>
+                            </StackPanel>
+                        </Button>
+                        <Button x:Name="ClearCacheButton" Style="{StaticResource ToolbarButtonStyle}" Click="ClearCache_Click" ToolTip="Clear all cached slide content" Padding="10,4">
+                            <StackPanel Orientation="Horizontal">
+                                <TextBlock FontFamily="Segoe Fluent Icons" Text="&#xE894;" FontSize="14" VerticalAlignment="Center" Margin="0,0,6,0"/>
+                                <TextBlock Text="Clear Cache" VerticalAlignment="Center"/>
+                            </StackPanel>
+                        </Button>
+                    </StackPanel>
+                </ScrollViewer>
+        </Border>
+
+        <!-- Status Bar -->
+        <Border DockPanel.Dock="Bottom"
+                Background="{DynamicResource ToolbarBackgroundBrush}"
+                BorderBrush="{DynamicResource PanelBorderBrush}"
+                BorderThickness="0,1,0,0"
+                Padding="8,4">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+                <TextBlock x:Name="CacheStatusText" 
+                           VerticalAlignment="Center" 
+                           Foreground="{DynamicResource SecondaryTextBrush}" 
+                           FontSize="11"/>
+                <StackPanel Grid.Column="1" Orientation="Horizontal">
                     <Border x:Name="RemoteInfoContainer"
                             Padding="4,2"
                             Margin="0"
@@ -420,10 +478,10 @@
                             Margin="4,0,0,0"
                             VerticalAlignment="Center"
                             IsEnabled="False"
-                            FontFamily="Segoe MDL2 Assets"
+                            FontFamily="Segoe Fluent Icons"
                             Content="&#xE8C8;"/>
                 </StackPanel>
-            </ScrollViewer>
+            </Grid>
         </Border>
 
         <!-- Main content area -->
@@ -531,6 +589,7 @@
                                 </TextBox>
                                 <TextBlock Grid.Column="2"
                                            Text="{Binding CacheSummary}"
+                                           ToolTip="{Binding CacheStatusTooltip}"
                                            Foreground="{DynamicResource MutedTextBrush}"
                                            FontSize="10"
                                            HorizontalAlignment="Right"

@@ -66,6 +66,7 @@ public class SlideItem : INotifyPropertyChanged
                 OnPropertyChanged(nameof(CacheState));
                 OnPropertyChanged(nameof(CacheLabel));
                 OnPropertyChanged(nameof(CacheSummary));
+                OnPropertyChanged(nameof(CacheStatusTooltip));
             }
         }
     }
@@ -89,15 +90,16 @@ public class SlideItem : INotifyPropertyChanged
                 OnPropertyChanged(nameof(Source));
                 OnPropertyChanged(nameof(SourceLabel));
                 OnPropertyChanged(nameof(CacheSummary));
+                OnPropertyChanged(nameof(CacheStatusTooltip));
             }
         }
     }
 
     public string SourceLabel => Source switch
     {
-        SlideSource.Cache => "cache",
-        SlideSource.Network => "network",
-        SlideSource.Failed => "failed",
+        SlideSource.Cache => "Cached",
+        SlideSource.Network => "Live",
+        SlideSource.Failed => "Failed",
         _ => ""
     };
 
@@ -105,11 +107,30 @@ public class SlideItem : INotifyPropertyChanged
     {
         get
         {
-            if (string.IsNullOrWhiteSpace(CacheLabel)) return SourceLabel;
-            if (string.IsNullOrWhiteSpace(SourceLabel)) return CacheLabel;
-            return $"{CacheLabel} ({SourceLabel})";
+            if (CacheState == SlideCacheState.Failed || Source == SlideSource.Failed)
+                return "Failed";
+
+            if (CacheState == SlideCacheState.Caching)
+                return "Caching";
+
+            if (Source == SlideSource.Network)
+                return "Live";
+
+            if (Source == SlideSource.Cache || CacheState == SlideCacheState.Cached)
+                return "Cached";
+
+            return "";
         }
     }
+
+    public string CacheStatusTooltip => CacheSummary switch
+    {
+        "Cached" => "This slide is saved on your computer. It should open quickly during your presentation, even if your internet connection is slow.",
+        "Live" => "This slide is a live web page. In Present.NET, web pages are always live and load from the internet each time you open them, so a stable connection is important.",
+        "Failed" => "This slide could not be prepared. Check the slide address and your internet connection, then try again.",
+        "Caching" => "This slide is being prepared right now. It will be ready in a moment.",
+        _ => ""
+    };
 
     public SlideItem(string url, int number)
     {
