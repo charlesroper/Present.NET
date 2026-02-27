@@ -32,10 +32,22 @@ public partial class FullscreenWindow : Window
 
     private async void Window_Loaded(object sender, RoutedEventArgs e)
     {
-        await SlideWebView.EnsureCoreWebView2Async();
-        _webViewReady = true;
-        SlideWebView.CoreWebView2.Settings.IsStatusBarEnabled = false;
-        SlideWebView.CoreWebView2.Settings.AreDefaultContextMenusEnabled = false;
+        try
+        {
+            await SlideWebView.EnsureCoreWebView2Async();
+            _webViewReady = true;
+            SlideWebView.CoreWebView2.Settings.IsStatusBarEnabled = false;
+            SlideWebView.CoreWebView2.Settings.AreDefaultContextMenusEnabled = false;
+        }
+        catch (Exception ex)
+        {
+            MessageBox.Show(
+                $"WebView2 runtime is not installed.\n\n{ex.Message}\n\n" +
+                "Download from: https://developer.microsoft.com/en-us/microsoft-edge/webview2/",
+                "WebView2 Required", MessageBoxButton.OK, MessageBoxImage.Warning);
+            return;
+        }
+
         await NavigateToCurrentSlideAsync();
         UpdateCounter();
     }

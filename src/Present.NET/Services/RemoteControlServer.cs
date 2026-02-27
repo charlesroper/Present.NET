@@ -16,6 +16,7 @@ public class RemoteControlServer : IDisposable
     private WebApplication? _app;
     private bool _disposed;
     private bool _started;
+    private Task _shutdownTask = Task.CompletedTask;
     private readonly object _lifecycleLock = new();
 
     // Actions dispatched to the UI
@@ -37,6 +38,9 @@ public class RemoteControlServer : IDisposable
 
     public void Start()
     {
+        // Await prior shutdown if needed
+        _shutdownTask.GetAwaiter().GetResult();
+
         lock (_lifecycleLock)
         {
             if (_disposed) throw new ObjectDisposedException(nameof(RemoteControlServer));
@@ -70,7 +74,7 @@ public class RemoteControlServer : IDisposable
 
         if (appToStop != null)
         {
-            _ = Task.Run(async () =>
+            _shutdownTask = Task.Run(async () =>
             {
                 try
                 {

@@ -20,6 +20,14 @@ public sealed class SlideCacheService
     private readonly string _cacheRoot;
     private readonly Func<string, CancellationToken, Task<SlideDownloadResult>> _downloader;
     private readonly ConcurrentDictionary<string, Task<SlideCacheEntry?>> _inFlightDownloads = new();
+    private static readonly HttpClient _httpClient;
+
+    static SlideCacheService()
+    {
+        _httpClient = new HttpClient();
+        _httpClient.DefaultRequestHeaders.UserAgent.ParseAdd("Present.NET/1.0 (+https://github.com/charlesroper/present)");
+        _httpClient.DefaultRequestHeaders.Accept.ParseAdd("image/avif,image/webp,image/apng,image/*,*/*;q=0.8");
+    }
 
     public SlideCacheService(string? cacheRoot = null, Func<string, CancellationToken, Task<SlideDownloadResult>>? downloader = null)
     {
@@ -219,10 +227,7 @@ public sealed class SlideCacheService
 
     private static async Task<SlideDownloadResult> DownloadAsync(string url, CancellationToken cancellationToken)
     {
-        using var client = new HttpClient();
-        client.DefaultRequestHeaders.UserAgent.ParseAdd("Present.NET/1.0 (+https://github.com/charlesroper/present)");
-        client.DefaultRequestHeaders.Accept.ParseAdd("image/avif,image/webp,image/apng,image/*,*/*;q=0.8");
-        using var response = await client.GetAsync(url, cancellationToken);
+        using var response = await _httpClient.GetAsync(url, cancellationToken);
         response.EnsureSuccessStatusCode();
         var bytes = await response.Content.ReadAsByteArrayAsync(cancellationToken);
         var contentType = response.Content.Headers.ContentType?.MediaType;

@@ -82,6 +82,7 @@ public partial class MainWindow : Window
                 $"WebView2 runtime is not installed.\n\n{ex.Message}\n\n" +
                 "Download from: https://developer.microsoft.com/en-us/microsoft-edge/webview2/",
                 "WebView2 Required", MessageBoxButton.OK, MessageBoxImage.Warning);
+            return;
         }
     }
 
