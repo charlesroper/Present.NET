@@ -1,0 +1,10 @@
+{
+  "version": 1,
+  "skills": {
+    "publishing-wpf-apps": {
+      "source": "christian289/dotnet-with-claudecode",
+      "sourceType": "github",
+      "computedHash": "9587272651e259cdd3d93c3611445845819c2f49bafe588fa38694efd47eda0d"
+    }
+  }
+}
