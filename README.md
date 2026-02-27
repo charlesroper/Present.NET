@@ -1,8 +1,10 @@
 # Present.NET
 
-A Windows WPF presentation app that displays web content and images as slides. Port of the Simon Willison's [dream macOS presentation app](https://simonwillison.net/2026/Feb/25/present/).
+A Windows .NET presentation app that displays web content and images as slides.
 
-For pragmatic contributor/agent workflow guidance, see `AGENTS.md`.
+This is a vibe-coded port of Simon Willison's [dream macOS presentation app](https://simonwillison.net/2026/Feb/25/present/). It is entirely built in OpenCode, mostly using OpenAI Codex models and MiniMax M2.5 Free. I have never opened the project in Visual Studio.
+
+For contributor/agent workflow guidance, see `AGENTS.md`.
 
 ## Features
 
@@ -155,17 +157,19 @@ URLs ending in `.png`, `.gif`, `.jpg`, `.jpeg`, `.webp`, or `.svg` are automatic
 
 ### Slide Cache
 
-When you open a slide list, Present.NET starts caching slides in the background.
+When you open a slide list, Present.NET starts caching images in the background.
 
-- Selecting a slide also triggers caching if it is not cached yet.
+- Selecting an image slide also triggers caching if it is not cached yet.
 - **Reload Slide** purges and re-caches the selected slide.
 - **Re-cache** clears and rebuilds cache for all slides.
 - **Clear Cache** removes all cached slide content.
+- Web pages are always "Live" — they are not cached because they are rendered directly from the network.
 
-Cache status is shown next to each slide in the sidebar.
+Cache status is shown next to each slide in the sidebar:
 
-- `Cached (cache)` means the current slide is loading from local disk cache.
-- `Cached (network)` means the slide is warm-cached for WebView but still rendered from its network URL.
+- **Cached** — image saved locally, loads instantly offline
+- **Live** — web page loads from the internet each time
+- **Failed** — image could not be cached (check URL and internet connection)
 
 ### Remote Control
 
