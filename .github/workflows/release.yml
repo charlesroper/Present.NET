@@ -1,0 +1,57 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: windows-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '8.0.x'
+
+      - name: Extract version
+        id: version
+        run: |
+          $version = $env:GITHUB_REF_NAME -replace '^v', ''
+          echo "version=$version" >> $env:GITHUB_OUTPUT
+        shell: pwsh
+
+      - name: Build and publish
+        run: |
+          dotnet publish src/Present.NET/Present.NET.csproj `
+            -c Release `
+            -r win-x64 `
+            --self-contained true `
+            -p:PublishSingleFile=true `
+            -p:IncludeNativeLibrariesForSelfExtract=true `
+            -o ./publish
+
+      - name: Create zip
+        run: |
+          $version = "${{ steps.version.outputs.version }}"
+          Compress-Archive -Path ./publish/* -DestinationPath ./Present.NET-$version-win-x64.zip
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          name: v${{ steps.version.outputs.version }}
+          body: |
+            Download the attached zip file, extract it, and run `Present.NET.exe`.
+            
+            This is a self-contained Windows executable - no .NET runtime required.
+          files: Present.NET-${{ steps.version.outputs.version }}-win-x64.zip
+          draft: false
+          prerelease: ${{ contains(steps.version.outputs.version, 'alpha') || contains(steps.version.outputs.version, 'beta') || contains(steps.version.outputs.version, 'rc') }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
