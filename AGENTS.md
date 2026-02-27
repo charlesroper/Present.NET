@@ -84,3 +84,27 @@ Before finishing a change:
 
 For building distributable releases (exe, installer, etc.), see the
 `publishing-wpf-apps` skill in `.agents/skills/`.
+
+## Versioning
+
+This project uses [Romantic Versioning](https://github.com/romversioning/romver):
+
+- **Format:** `PROJECT.MAJOR.MINOR[-PRERELEASE]`
+- **Tag pattern:** `v*` (e.g., `v1.0.0-beta1`)
+- **Release process:** Push a tag to trigger GitHub Actions workflow
+
+Examples:
+- `v0.1.0` — initial development
+- `v1.0.0-beta1` — first prerelease
+- `v1.0.0` — first stable
+- `v1.1.0` — backward-compatible feature
+- `v2.0.0` — major breaking change
+
+## Release Process
+
+Releases are automated via GitHub Actions (see `.github/workflows/release.yml`):
+
+1. Push a version tag: `git tag v1.0.0 && git push --tags`
+2. Workflow builds self-contained Windows exe
+3. Creates GitHub Release with zip attached
+4. Prerelease tags (alpha, beta, rc) are auto-marked as prerelease

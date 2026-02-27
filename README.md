@@ -62,12 +62,26 @@ git clone https://github.com/charlesroper/present.git
 cd present
 dotnet restore
 dotnet build Present.NET.sln -c Release
+dotnet format Present.NET.sln
 
 # Run
 dotnet run --project src/Present.NET/Present.NET.csproj
 ```
 
 Or open `Present.NET.sln` in Visual Studio 2022 and press F5.
+
+## Publishing / Releases
+
+Releases are automated via GitHub Actions. To create a release:
+
+```powershell
+git tag v1.0.0-beta1
+git push --tags
+```
+
+This triggers the workflow to build a self-contained Windows exe, zip it, and create a GitHub Release.
+
+See `.github/workflows/release.yml` and `AGENTS.md` for details.
 
 ## Testing
 
