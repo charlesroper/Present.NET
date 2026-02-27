@@ -11,6 +11,7 @@ For pragmatic contributor/agent workflow guidance, see `AGENTS.md`.
 - **Auto-persist**: Slide list is saved automatically and restored on relaunch (`%APPDATA%\Present.NET\slides.txt`)
 - **File I/O**: Open/Save slide lists as plain text files (one URL per line)
 - **Zoom Controls**: `Ctrl+=` / `Ctrl+-` / `Ctrl+0` to zoom in/out/reset (applies to both preview and fullscreen)
+- **Theme Modes**: `View -> Theme` supports `Use System`, `Light`, and `Dark` for app UI chrome; preference is saved across launches
 - **Image Slides**: URLs ending in `.png`, `.gif`, `.jpg`, `.jpeg`, `.webp`, `.svg` are rendered as full-window images on a black background
 - **Slide Cache**: Slides are cached on load for faster navigation; toolbar actions support clear, re-cache, and reload of the selected slide
 - **Remote Control Server**: Embedded HTTP server on port 9123 with a mobile-friendly HTML control page
@@ -116,6 +117,7 @@ Recent test-related changes in this repo were implemented as one commit per TDD 
 4. Drag slides up/down to reorder them
 5. Use **↑/↓** toolbar buttons or drag-and-drop to reorder
 6. Use **File → Open / Save / Save As** to manage slide list files
+7. Use **View → Theme** to switch app UI between **Use System**, **Light**, and **Dark**
 
 ### Play Mode
 

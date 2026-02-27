@@ -4,10 +4,295 @@
         xmlns:wv2="clr-namespace:Microsoft.Web.WebView2.Wpf;assembly=Microsoft.Web.WebView2.Wpf"
         Title="Present.NET" Height="640" Width="1024" MinWidth="600" MinHeight="400"
         Icon="Assets/present.ico"
+        Background="{DynamicResource AppWindowBackgroundBrush}"
+        Foreground="{DynamicResource PrimaryTextBrush}"
         Closing="Window_Closing">
+    <Window.Resources>
+        <ControlTemplate x:Key="TopLevelMenuItemTemplate" TargetType="MenuItem">
+            <Grid>
+                <Border x:Name="TopLevelBorder"
+                        Background="{TemplateBinding Background}"
+                        BorderBrush="{TemplateBinding BorderBrush}"
+                        BorderThickness="1"
+                        Padding="{TemplateBinding Padding}">
+                    <ContentPresenter ContentSource="Header"
+                                      RecognizesAccessKey="True"
+                                      HorizontalAlignment="Center"
+                                      VerticalAlignment="Center"/>
+                </Border>
+                <Popup x:Name="PART_Popup"
+                       Placement="Bottom"
+                       IsOpen="{TemplateBinding IsSubmenuOpen}"
+                       Focusable="False"
+                       AllowsTransparency="True"
+                       PopupAnimation="Fade">
+                    <Border Background="{DynamicResource MenuPopupBackgroundBrush}"
+                            BorderBrush="{DynamicResource MenuPopupBorderBrush}"
+                            BorderThickness="1"
+                            Padding="2">
+                        <StackPanel IsItemsHost="True"
+                                    KeyboardNavigation.DirectionalNavigation="Cycle"/>
+                    </Border>
+                </Popup>
+            </Grid>
+            <ControlTemplate.Triggers>
+                <Trigger Property="IsHighlighted" Value="True">
+                    <Setter TargetName="TopLevelBorder" Property="Background" Value="{DynamicResource MenuItemHoverBackgroundBrush}"/>
+                    <Setter TargetName="TopLevelBorder" Property="BorderBrush" Value="{DynamicResource MenuItemHoverBorderBrush}"/>
+                </Trigger>
+                <Trigger Property="IsSubmenuOpen" Value="True">
+                    <Setter TargetName="TopLevelBorder" Property="Background" Value="{DynamicResource MenuItemHoverBackgroundBrush}"/>
+                    <Setter TargetName="TopLevelBorder" Property="BorderBrush" Value="{DynamicResource MenuItemHoverBorderBrush}"/>
+                </Trigger>
+                <Trigger Property="IsEnabled" Value="False">
+                    <Setter Property="Foreground" Value="{DynamicResource SecondaryTextBrush}"/>
+                </Trigger>
+            </ControlTemplate.Triggers>
+        </ControlTemplate>
+
+        <ControlTemplate x:Key="SubmenuMenuItemTemplate" TargetType="MenuItem">
+            <Grid SnapsToDevicePixels="True">
+                <Border x:Name="SubmenuBorder"
+                        Background="{TemplateBinding Background}"
+                        BorderBrush="Transparent"
+                        BorderThickness="1"
+                        Padding="{TemplateBinding Padding}">
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="12"/>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="Auto"/>
+                            <ColumnDefinition Width="10"/>
+                        </Grid.ColumnDefinitions>
+                        <Path x:Name="CheckGlyph"
+                              Grid.Column="0"
+                              Data="M 1 4 L 4 7 L 9 1"
+                              Stroke="{DynamicResource PrimaryTextBrush}"
+                              StrokeThickness="2"
+                              StrokeStartLineCap="Round"
+                              StrokeEndLineCap="Round"
+                              StrokeLineJoin="Round"
+                              HorizontalAlignment="Center"
+                              VerticalAlignment="Center"
+                              Visibility="Collapsed"/>
+                        <ContentPresenter Grid.Column="1"
+                                          ContentSource="Header"
+                                          RecognizesAccessKey="True"
+                                          VerticalAlignment="Center"
+                                          Margin="3,0,8,0"/>
+                        <TextBlock Grid.Column="2"
+                                   Text="{TemplateBinding InputGestureText}"
+                                   VerticalAlignment="Center"
+                                   Foreground="{DynamicResource SecondaryTextBrush}"
+                                   Margin="4,0,6,0"/>
+                        <Path x:Name="SubmenuArrow"
+                              Grid.Column="3"
+                              Data="M 0 0 L 4 4 L 0 8"
+                              Stroke="{DynamicResource SecondaryTextBrush}"
+                              StrokeThickness="1.6"
+                              StrokeStartLineCap="Round"
+                              StrokeEndLineCap="Round"
+                              StrokeLineJoin="Round"
+                              HorizontalAlignment="Center"
+                              VerticalAlignment="Center"
+                              Visibility="Collapsed"/>
+                    </Grid>
+                </Border>
+                <Popup x:Name="PART_Popup"
+                       Placement="Right"
+                       HorizontalOffset="-1"
+                       IsOpen="{TemplateBinding IsSubmenuOpen}"
+                       Focusable="False"
+                       AllowsTransparency="True"
+                       PopupAnimation="Fade">
+                    <Border Background="{DynamicResource MenuPopupBackgroundBrush}"
+                            BorderBrush="{DynamicResource MenuPopupBorderBrush}"
+                            BorderThickness="1"
+                            Padding="2">
+                        <StackPanel IsItemsHost="True"
+                                    KeyboardNavigation.DirectionalNavigation="Cycle"/>
+                    </Border>
+                </Popup>
+            </Grid>
+            <ControlTemplate.Triggers>
+                <Trigger Property="IsHighlighted" Value="True">
+                    <Setter TargetName="SubmenuBorder" Property="Background" Value="{DynamicResource MenuItemHoverBackgroundBrush}"/>
+                    <Setter TargetName="SubmenuBorder" Property="BorderBrush" Value="{DynamicResource MenuItemHoverBorderBrush}"/>
+                </Trigger>
+                <Trigger Property="HasItems" Value="True">
+                    <Setter TargetName="SubmenuArrow" Property="Visibility" Value="Visible"/>
+                </Trigger>
+                <Trigger Property="IsChecked" Value="True">
+                    <Setter TargetName="CheckGlyph" Property="Visibility" Value="Visible"/>
+                </Trigger>
+                <Trigger Property="IsEnabled" Value="False">
+                    <Setter Property="Foreground" Value="{DynamicResource SecondaryTextBrush}"/>
+                </Trigger>
+            </ControlTemplate.Triggers>
+        </ControlTemplate>
+
+        <Style x:Key="ThemedMenuItemStyle" TargetType="MenuItem">
+            <Setter Property="Foreground" Value="{DynamicResource PrimaryTextBrush}"/>
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="BorderBrush" Value="Transparent"/>
+            <Setter Property="Padding" Value="8,3"/>
+            <Setter Property="Template" Value="{StaticResource SubmenuMenuItemTemplate}"/>
+            <Style.Triggers>
+                <Trigger Property="Role" Value="TopLevelHeader">
+                    <Setter Property="Template" Value="{StaticResource TopLevelMenuItemTemplate}"/>
+                    <Setter Property="Padding" Value="8,3"/>
+                </Trigger>
+                <Trigger Property="Role" Value="TopLevelItem">
+                    <Setter Property="Template" Value="{StaticResource TopLevelMenuItemTemplate}"/>
+                    <Setter Property="Padding" Value="8,3"/>
+                </Trigger>
+            </Style.Triggers>
+        </Style>
+
+        <Style x:Key="ThemedMenuSeparatorStyle" TargetType="Separator">
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Separator">
+                        <Border Height="1"
+                                Margin="8,4"
+                                Background="{DynamicResource PanelBorderBrush}"/>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <Style x:Key="{x:Static MenuItem.SeparatorStyleKey}" TargetType="Separator" BasedOn="{StaticResource ThemedMenuSeparatorStyle}"/>
+
+        <Style x:Key="ScrollBarThumbStyle" TargetType="Thumb">
+            <Setter Property="Background" Value="{DynamicResource ScrollBarThumbBrush}"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Thumb">
+                        <Border Background="{TemplateBinding Background}"
+                                CornerRadius="3"
+                                Margin="1"/>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+            <Style.Triggers>
+                <Trigger Property="IsMouseOver" Value="True">
+                    <Setter Property="Background" Value="{DynamicResource ScrollBarThumbHoverBrush}"/>
+                </Trigger>
+            </Style.Triggers>
+        </Style>
+
+        <Style x:Key="ScrollBarLineButtonStyle" TargetType="RepeatButton">
+            <Setter Property="Focusable" Value="False"/>
+            <Setter Property="Background" Value="{DynamicResource ScrollBarTrackBrush}"/>
+            <Setter Property="Foreground" Value="{DynamicResource ScrollBarArrowBrush}"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="RepeatButton">
+                        <Border Background="{TemplateBinding Background}">
+                            <Path x:Name="Arrow"
+                                  Fill="{TemplateBinding Foreground}"
+                                  HorizontalAlignment="Center"
+                                  VerticalAlignment="Center"
+                                  Data="M 0 0 L 4 4 L 8 0 Z"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="Tag" Value="Left">
+                                <Setter TargetName="Arrow" Property="Data" Value="M 6 0 L 2 4 L 6 8 Z"/>
+                            </Trigger>
+                            <Trigger Property="Tag" Value="Right">
+                                <Setter TargetName="Arrow" Property="Data" Value="M 2 0 L 6 4 L 2 8 Z"/>
+                            </Trigger>
+                            <Trigger Property="Tag" Value="Up">
+                                <Setter TargetName="Arrow" Property="Data" Value="M 0 6 L 4 2 L 8 6 Z"/>
+                            </Trigger>
+                            <Trigger Property="Tag" Value="Down">
+                                <Setter TargetName="Arrow" Property="Data" Value="M 0 2 L 4 6 L 8 2 Z"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <Style TargetType="ScrollBar">
+            <Setter Property="Background" Value="{DynamicResource ScrollBarTrackBrush}"/>
+            <Setter Property="Width" Value="14"/>
+            <Setter Property="Height" Value="14"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="ScrollBar">
+                        <Grid Background="{TemplateBinding Background}">
+                            <Track x:Name="PART_Track"
+                                   IsDirectionReversed="True"
+                                   Focusable="False">
+                                <Track.DecreaseRepeatButton>
+                                    <RepeatButton Command="{x:Static ScrollBar.PageUpCommand}"
+                                                  Background="{DynamicResource ScrollBarTrackBrush}"
+                                                  BorderThickness="0"
+                                                  IsTabStop="False"/>
+                                </Track.DecreaseRepeatButton>
+                                <Track.Thumb>
+                                    <Thumb Style="{StaticResource ScrollBarThumbStyle}"/>
+                                </Track.Thumb>
+                                <Track.IncreaseRepeatButton>
+                                    <RepeatButton Command="{x:Static ScrollBar.PageDownCommand}"
+                                                  Background="{DynamicResource ScrollBarTrackBrush}"
+                                                  BorderThickness="0"
+                                                  IsTabStop="False"/>
+                                </Track.IncreaseRepeatButton>
+                            </Track>
+                            <RepeatButton x:Name="PART_LineUpButton"
+                                          Style="{StaticResource ScrollBarLineButtonStyle}"
+                                          Command="{x:Static ScrollBar.LineUpCommand}"
+                                          Tag="Up"/>
+                            <RepeatButton x:Name="PART_LineDownButton"
+                                          Style="{StaticResource ScrollBarLineButtonStyle}"
+                                          Command="{x:Static ScrollBar.LineDownCommand}"
+                                          Tag="Down"/>
+                        </Grid>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="Orientation" Value="Horizontal">
+                                <Setter TargetName="PART_LineUpButton" Property="Command" Value="{x:Static ScrollBar.LineLeftCommand}"/>
+                                <Setter TargetName="PART_LineUpButton" Property="Tag" Value="Left"/>
+                                <Setter TargetName="PART_LineUpButton" Property="Width" Value="14"/>
+                                <Setter TargetName="PART_LineUpButton" Property="Height" Value="Auto"/>
+                                <Setter TargetName="PART_LineUpButton" Property="HorizontalAlignment" Value="Left"/>
+                                <Setter TargetName="PART_LineDownButton" Property="Command" Value="{x:Static ScrollBar.LineRightCommand}"/>
+                                <Setter TargetName="PART_LineDownButton" Property="Tag" Value="Right"/>
+                                <Setter TargetName="PART_LineDownButton" Property="Width" Value="14"/>
+                                <Setter TargetName="PART_LineDownButton" Property="Height" Value="Auto"/>
+                                <Setter TargetName="PART_LineDownButton" Property="HorizontalAlignment" Value="Right"/>
+                                <Setter TargetName="PART_Track" Property="Margin" Value="14,0,14,0"/>
+                            </Trigger>
+                            <Trigger Property="Orientation" Value="Vertical">
+                                <Setter TargetName="PART_LineUpButton" Property="Command" Value="{x:Static ScrollBar.LineUpCommand}"/>
+                                <Setter TargetName="PART_LineUpButton" Property="Tag" Value="Up"/>
+                                <Setter TargetName="PART_LineUpButton" Property="Height" Value="14"/>
+                                <Setter TargetName="PART_LineUpButton" Property="Width" Value="Auto"/>
+                                <Setter TargetName="PART_LineUpButton" Property="VerticalAlignment" Value="Top"/>
+                                <Setter TargetName="PART_LineDownButton" Property="Command" Value="{x:Static ScrollBar.LineDownCommand}"/>
+                                <Setter TargetName="PART_LineDownButton" Property="Tag" Value="Down"/>
+                                <Setter TargetName="PART_LineDownButton" Property="Height" Value="14"/>
+                                <Setter TargetName="PART_LineDownButton" Property="Width" Value="Auto"/>
+                                <Setter TargetName="PART_LineDownButton" Property="VerticalAlignment" Value="Bottom"/>
+                                <Setter TargetName="PART_Track" Property="Margin" Value="0,14,0,14"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+    </Window.Resources>
     <DockPanel>
         <!-- Menu -->
-        <Menu DockPanel.Dock="Top">
+        <Menu DockPanel.Dock="Top"
+              ItemContainerStyle="{StaticResource ThemedMenuItemStyle}"
+              Background="{DynamicResource MenuBackgroundBrush}"
+              Foreground="{DynamicResource PrimaryTextBrush}">
+            <Menu.Resources>
+                <Style TargetType="MenuItem" BasedOn="{StaticResource ThemedMenuItemStyle}"/>
+                <Style TargetType="Separator" BasedOn="{StaticResource ThemedMenuSeparatorStyle}"/>
+            </Menu.Resources>
             <MenuItem Header="_File">
                 <MenuItem Header="_Open..." Click="OpenFile_Click" InputGestureText="Ctrl+O"/>
                 <MenuItem Header="_Save" Click="SaveFile_Click" InputGestureText="Ctrl+S"/>
@@ -22,6 +307,12 @@
                 <MenuItem Header="Zoom _In" Click="ZoomIn_Click" InputGestureText="Ctrl+="/>
                 <MenuItem Header="Zoom _Out" Click="ZoomOut_Click" InputGestureText="Ctrl+-"/>
                 <MenuItem Header="_Reset Zoom" Click="ZoomReset_Click" InputGestureText="Ctrl+0"/>
+                <Separator/>
+                <MenuItem Header="_Theme">
+                    <MenuItem x:Name="UseSystemThemeMenuItem" Header="_Use System" IsCheckable="True" Click="UseSystemTheme_Click"/>
+                    <MenuItem x:Name="UseLightThemeMenuItem" Header="_Light" IsCheckable="True" Click="UseLightTheme_Click"/>
+                    <MenuItem x:Name="UseDarkThemeMenuItem" Header="_Dark" IsCheckable="True" Click="UseDarkTheme_Click"/>
+                </MenuItem>
             </MenuItem>
             <MenuItem Header="_Help">
                 <MenuItem Header="_Remote Control" Click="ShowRemoteInfo_Click"/>
@@ -29,48 +320,111 @@
         </Menu>
 
         <!-- Toolbar -->
-        <ToolBar DockPanel.Dock="Top" Background="#F3F3F3">
-            <Button Click="Play_Click" ToolTip="Play Presentation (F5)" Padding="8,4">
+        <Border DockPanel.Dock="Top"
+                Background="{DynamicResource ToolbarBackgroundBrush}"
+                BorderBrush="{DynamicResource PanelBorderBrush}"
+                BorderThickness="0,0,0,1"
+                Padding="6,4">
+            <Border.Resources>
+                <Style x:Key="ToolbarButtonStyle" TargetType="Button">
+                    <Setter Property="Background" Value="{DynamicResource ButtonBackgroundBrush}"/>
+                    <Setter Property="Foreground" Value="{DynamicResource ToolbarForegroundBrush}"/>
+                    <Setter Property="BorderBrush" Value="{DynamicResource ButtonBorderBrush}"/>
+                    <Setter Property="BorderThickness" Value="1"/>
+                    <Setter Property="Padding" Value="8,4"/>
+                    <Setter Property="Margin" Value="0"/>
+                    <Setter Property="FocusVisualStyle" Value="{x:Null}"/>
+                    <Setter Property="Template">
+                        <Setter.Value>
+                            <ControlTemplate TargetType="Button">
+                                <Border x:Name="ButtonBorder"
+                                        Background="{TemplateBinding Background}"
+                                        BorderBrush="{TemplateBinding BorderBrush}"
+                                        BorderThickness="{TemplateBinding BorderThickness}">
+                                    <ContentPresenter HorizontalAlignment="Center"
+                                                      VerticalAlignment="Center"
+                                                      Margin="{TemplateBinding Padding}"
+                                                      RecognizesAccessKey="True"/>
+                                </Border>
+                                <ControlTemplate.Triggers>
+                                    <Trigger Property="IsMouseOver" Value="True">
+                                        <Setter TargetName="ButtonBorder" Property="Background" Value="{DynamicResource ButtonHoverBackgroundBrush}"/>
+                                        <Setter TargetName="ButtonBorder" Property="BorderBrush" Value="{DynamicResource ButtonHoverBorderBrush}"/>
+                                    </Trigger>
+                                    <Trigger Property="IsPressed" Value="True">
+                                        <Setter TargetName="ButtonBorder" Property="Background" Value="{DynamicResource ButtonPressedBackgroundBrush}"/>
+                                        <Setter TargetName="ButtonBorder" Property="BorderBrush" Value="{DynamicResource ButtonPressedBorderBrush}"/>
+                                    </Trigger>
+                                    <Trigger Property="IsKeyboardFocused" Value="True">
+                                        <Setter TargetName="ButtonBorder" Property="BorderBrush" Value="{DynamicResource ButtonHoverBorderBrush}"/>
+                                    </Trigger>
+                                    <Trigger Property="IsEnabled" Value="False">
+                                        <Setter TargetName="ButtonBorder" Property="Opacity" Value="0.55"/>
+                                    </Trigger>
+                                </ControlTemplate.Triggers>
+                            </ControlTemplate>
+                        </Setter.Value>
+                    </Setter>
+                    <Style.Triggers>
+                        <Trigger Property="IsEnabled" Value="False">
+                            <Setter Property="Opacity" Value="0.55"/>
+                        </Trigger>
+                    </Style.Triggers>
+                </Style>
+                <Style x:Key="ToolbarSeparatorStyle" TargetType="Border">
+                    <Setter Property="Width" Value="1"/>
+                    <Setter Property="Height" Value="22"/>
+                    <Setter Property="Margin" Value="10,0"/>
+                    <Setter Property="Background" Value="{DynamicResource ToolbarSeparatorBrush}"/>
+                    <Setter Property="VerticalAlignment" Value="Center"/>
+                </Style>
+            </Border.Resources>
+            <ScrollViewer Background="{DynamicResource ToolbarBackgroundBrush}"
+                          HorizontalScrollBarVisibility="Auto"
+                          VerticalScrollBarVisibility="Disabled"
+                          CanContentScroll="False">
                 <StackPanel Orientation="Horizontal">
-                    <TextBlock Text="Play"/>
+                    <Button Style="{StaticResource ToolbarButtonStyle}" Click="Play_Click" ToolTip="Play Presentation (F5)" Content="Play"/>
+                    <Border Style="{StaticResource ToolbarSeparatorStyle}"/>
+                    <Button Style="{StaticResource ToolbarButtonStyle}" Click="AddSlide_Click" ToolTip="Add Slide" Content="+ Add Slide"/>
+                    <Button Style="{StaticResource ToolbarButtonStyle}" Click="RemoveSlide_Click" ToolTip="Remove Selected Slide" Content="Remove"/>
+                    <Border Style="{StaticResource ToolbarSeparatorStyle}"/>
+                    <Button Style="{StaticResource ToolbarButtonStyle}" Click="MoveUp_Click" ToolTip="Move Slide Up" Content="Up"/>
+                    <Button Style="{StaticResource ToolbarButtonStyle}" Click="MoveDown_Click" ToolTip="Move Slide Down" Content="Down"/>
+                    <Border Style="{StaticResource ToolbarSeparatorStyle}"/>
+                    <Button Style="{StaticResource ToolbarButtonStyle}" Click="ZoomIn_Click" ToolTip="Zoom In (Ctrl+=)" Content="Zoom +"/>
+                    <Button Style="{StaticResource ToolbarButtonStyle}" Click="ZoomOut_Click" ToolTip="Zoom Out (Ctrl+-)" Content="Zoom -"/>
+                    <Button Style="{StaticResource ToolbarButtonStyle}" Click="ZoomReset_Click" ToolTip="Reset Zoom (Ctrl+0)" Content="Reset"/>
+                    <Border Style="{StaticResource ToolbarSeparatorStyle}"/>
+                    <Button x:Name="ReloadSlideCacheButton" Style="{StaticResource ToolbarButtonStyle}" Click="ReloadSelectedSlideCache_Click" ToolTip="Purge and re-cache selected slide" Content="Reload Slide"/>
+                    <Button x:Name="RecacheAllButton" Style="{StaticResource ToolbarButtonStyle}" Click="RecacheAll_Click" ToolTip="Purge and re-cache all slides" Content="Re-cache"/>
+                    <Button x:Name="ClearCacheButton" Style="{StaticResource ToolbarButtonStyle}" Click="ClearCache_Click" ToolTip="Clear all cached slide content" Content="Clear Cache"/>
+                    <TextBlock x:Name="CacheStatusText" VerticalAlignment="Center" Foreground="{DynamicResource SecondaryTextBrush}" FontSize="11" Margin="6,0,0,0"/>
+                    <Border Style="{StaticResource ToolbarSeparatorStyle}"/>
+                    <Border x:Name="RemoteInfoContainer"
+                            Padding="4,2"
+                            Margin="0"
+                            CornerRadius="3"
+                            Background="Transparent"
+                            VerticalAlignment="Center"
+                            MouseLeftButtonDown="RemoteInfoContainer_MouseLeftButtonDown"
+                            ToolTip="Double-click to copy remote URL">
+                        <TextBlock x:Name="RemoteInfoText" VerticalAlignment="Center" Foreground="{DynamicResource SecondaryTextBrush}"
+                                   FontSize="11"/>
+                    </Border>
+                    <Button x:Name="CopyRemoteButton"
+                            Style="{StaticResource ToolbarButtonStyle}"
+                            Click="CopyRemoteButton_Click"
+                            ToolTip="Copy remote URL"
+                            Padding="6,2"
+                            Margin="4,0,0,0"
+                            VerticalAlignment="Center"
+                            IsEnabled="False"
+                            FontFamily="Segoe MDL2 Assets"
+                            Content="&#xE8C8;"/>
                 </StackPanel>
-            </Button>
-            <Separator/>
-            <Button Click="AddSlide_Click" ToolTip="Add Slide" Padding="8,4" Content="+ Add Slide"/>
-            <Button Click="RemoveSlide_Click" ToolTip="Remove Selected Slide" Padding="8,4" Content="Remove"/>
-            <Separator/>
-            <Button Click="MoveUp_Click" ToolTip="Move Slide Up" Padding="8,4" Content="Up"/>
-            <Button Click="MoveDown_Click" ToolTip="Move Slide Down" Padding="8,4" Content="Down"/>
-            <Separator/>
-            <Button Click="ZoomIn_Click" ToolTip="Zoom In (Ctrl+=)" Padding="8,4" Content="Zoom +"/>
-            <Button Click="ZoomOut_Click" ToolTip="Zoom Out (Ctrl+-)" Padding="8,4" Content="Zoom -"/>
-            <Button Click="ZoomReset_Click" ToolTip="Reset Zoom (Ctrl+0)" Padding="8,4" Content="Reset"/>
-            <Separator/>
-            <Button x:Name="ReloadSlideCacheButton" Click="ReloadSelectedSlideCache_Click" ToolTip="Purge and re-cache selected slide" Padding="8,4" Content="Reload Slide"/>
-            <Button x:Name="RecacheAllButton" Click="RecacheAll_Click" ToolTip="Purge and re-cache all slides" Padding="8,4" Content="Re-cache"/>
-            <Button x:Name="ClearCacheButton" Click="ClearCache_Click" ToolTip="Clear all cached slide content" Padding="8,4" Content="Clear Cache"/>
-            <TextBlock x:Name="CacheStatusText" VerticalAlignment="Center" Foreground="#555" FontSize="11" Margin="6,0,0,0"/>
-            <Separator/>
-            <Border x:Name="RemoteInfoContainer"
-                    Padding="4,2"
-                    Margin="0"
-                    CornerRadius="3"
-                    Background="Transparent"
-                    MouseLeftButtonDown="RemoteInfoContainer_MouseLeftButtonDown"
-                    ToolTip="Double-click to copy remote URL">
-                <TextBlock x:Name="RemoteInfoText" VerticalAlignment="Center" Foreground="#555"
-                           FontSize="11"/>
-            </Border>
-            <Button x:Name="CopyRemoteButton"
-                    Click="CopyRemoteButton_Click"
-                    ToolTip="Copy remote URL"
-                    Padding="6,2"
-                    Margin="4,0,0,0"
-                    VerticalAlignment="Center"
-                    IsEnabled="False"
-                    FontFamily="Segoe MDL2 Assets"
-                    Content="&#xE8C8;"/>
-        </ToolBar>
+            </ScrollViewer>
+        </Border>
 
         <!-- Main content area -->
         <Grid>
@@ -81,12 +435,12 @@
             </Grid.ColumnDefinitions>
 
             <!-- Left sidebar: slide list -->
-            <DockPanel Grid.Column="0" Background="#FAFAFA">
-                <Border DockPanel.Dock="Top" Background="#E8E8E8" BorderBrush="#D0D0D0"
+            <DockPanel Grid.Column="0" Background="{DynamicResource SidebarBackgroundBrush}">
+                <Border DockPanel.Dock="Top" Background="{DynamicResource SidebarHeaderBackgroundBrush}" BorderBrush="{DynamicResource SidebarHeaderBorderBrush}"
                         BorderThickness="0,0,0,1" Padding="8,4">
                     <StackPanel Orientation="Horizontal">
                         <TextBlock Text="Slides" FontWeight="SemiBold" VerticalAlignment="Center"/>
-                        <TextBlock x:Name="SlideCountLabel" Foreground="#666" Margin="6,0,0,0"
+                        <TextBlock x:Name="SlideCountLabel" Foreground="{DynamicResource SecondaryTextBrush}" Margin="6,0,0,0"
                                    VerticalAlignment="Center" FontSize="11"/>
                     </StackPanel>
                 </Border>
@@ -97,7 +451,8 @@
                          PreviewMouseMove="SlideListBox_PreviewMouseMove"
                          Drop="SlideListBox_Drop"
                          DragOver="SlideListBox_DragOver"
-                         ScrollViewer.VerticalScrollBarVisibility="Auto"
+                          ScrollViewer.VerticalScrollBarVisibility="Auto"
+                         ScrollViewer.HorizontalScrollBarVisibility="Disabled"
                          BorderThickness="0"
                          Background="Transparent"
                          VirtualizingPanel.IsVirtualizing="False">
@@ -111,23 +466,23 @@
                                         <Border x:Name="ItemBorder"
                                                 Background="{TemplateBinding Background}"
                                                 BorderThickness="0,0,0,1"
-                                                BorderBrush="#E8E8E8">
+                                                 BorderBrush="{DynamicResource PanelBorderBrush}">
                                             <ContentPresenter Margin="0"/>
                                         </Border>
                                         <ControlTemplate.Triggers>
                                             <Trigger Property="IsSelected" Value="True">
-                                                <Setter TargetName="ItemBorder" Property="Background" Value="#0078D4"/>
+                                                <Setter TargetName="ItemBorder" Property="Background" Value="{DynamicResource ItemSelectedBackgroundBrush}"/>
                                                 <Setter Property="Foreground" Value="White"/>
                                             </Trigger>
                                             <Trigger Property="IsMouseOver" Value="True">
-                                                <Setter TargetName="ItemBorder" Property="Background" Value="#E5F3FB"/>
+                                                <Setter TargetName="ItemBorder" Property="Background" Value="{DynamicResource ItemHoverBackgroundBrush}"/>
                                             </Trigger>
                                             <MultiTrigger>
                                                 <MultiTrigger.Conditions>
                                                     <Condition Property="IsSelected" Value="True"/>
                                                     <Condition Property="IsMouseOver" Value="True"/>
                                                 </MultiTrigger.Conditions>
-                                                <Setter TargetName="ItemBorder" Property="Background" Value="#0067BE"/>
+                                                <Setter TargetName="ItemBorder" Property="Background" Value="{DynamicResource ItemSelectedHoverBackgroundBrush}"/>
                                             </MultiTrigger>
                                         </ControlTemplate.Triggers>
                                     </ControlTemplate>
@@ -145,7 +500,7 @@
                                 </Grid.ColumnDefinitions>
                                 <TextBlock Grid.Column="0"
                                            Text="{Binding Number}"
-                                           Foreground="#888"
+                                           Foreground="{DynamicResource MutedTextBrush}"
                                            FontSize="11"
                                            HorizontalAlignment="Center"
                                            VerticalAlignment="Center"
@@ -163,8 +518,8 @@
                                          PreviewKeyDown="SlideUrlTextBox_PreviewKeyDown"
                                          ToolTip="{Binding Url}">
                                     <TextBox.Style>
-                                        <Style TargetType="TextBox">
-                                            <Setter Property="Foreground" Value="#333"/>
+                                         <Style TargetType="TextBox">
+                                            <Setter Property="Foreground" Value="{DynamicResource TextInputForegroundBrush}"/>
                                             <Style.Triggers>
                                                 <DataTrigger Binding="{Binding RelativeSource={RelativeSource AncestorType=ListBoxItem}, Path=IsSelected}" Value="True">
                                                     <Setter Property="Foreground" Value="White"/>
@@ -176,7 +531,7 @@
                                 </TextBox>
                                 <TextBlock Grid.Column="2"
                                            Text="{Binding CacheSummary}"
-                                           Foreground="#888"
+                                           Foreground="{DynamicResource MutedTextBrush}"
                                            FontSize="10"
                                            HorizontalAlignment="Right"
                                            VerticalAlignment="Center"
@@ -189,25 +544,25 @@
 
             <!-- Splitter -->
             <GridSplitter Grid.Column="1" Width="5" HorizontalAlignment="Stretch"
-                          Background="#D0D0D0" Cursor="SizeWE"/>
+                          Background="{DynamicResource SplitterBrush}" Cursor="SizeWE"/>
 
             <!-- Right: preview pane -->
-            <Grid Grid.Column="2" Background="#222">
+            <Grid Grid.Column="2" Background="{DynamicResource PreviewPaneBackgroundBrush}">
                 <wv2:WebView2 x:Name="PreviewWebView"
                               Visibility="Collapsed"/>
                 <wv2:WebView2 x:Name="PreloadWebView"
                               Visibility="Collapsed"
                               IsHitTestVisible="False"/>
                 <Border x:Name="PreviewPlaceholder"
-                        Background="#222"
+                        Background="{DynamicResource PreviewPaneBackgroundBrush}"
                         HorizontalAlignment="Center"
                         VerticalAlignment="Center">
                     <StackPanel HorizontalAlignment="Center">
                         <TextBlock Text="Preview" FontSize="24" HorizontalAlignment="Center"
-                                   Foreground="#555" Margin="0,0,0,12"/>
-                        <TextBlock Text="Add slides in the sidebar" Foreground="#666"
+                                   Foreground="{DynamicResource PreviewPlaceholderTitleBrush}" Margin="0,0,0,12"/>
+                        <TextBlock Text="Add slides in the sidebar" Foreground="{DynamicResource PreviewPlaceholderBodyBrush}"
                                    FontSize="14" HorizontalAlignment="Center"/>
-                        <TextBlock Text="then select one to preview" Foreground="#555"
+                        <TextBlock Text="then select one to preview" Foreground="{DynamicResource PreviewPlaceholderTitleBrush}"
                                    FontSize="12" HorizontalAlignment="Center" Margin="0,4,0,0"/>
                     </StackPanel>
                 </Border>

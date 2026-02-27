@@ -5,10 +5,13 @@ using System.Threading;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
+using System.Windows.Interop;
+using System.Windows.Media;
 using Microsoft.Web.WebView2.Core;
 using Microsoft.Win32;
 using Present.NET.Models;
 using Present.NET.Services;
+using System.Runtime.InteropServices;
 
 namespace Present.NET;
 
@@ -26,6 +29,8 @@ public partial class MainWindow : Window
     private readonly SlideCacheService _slideCacheService = new();
     private readonly SemaphoreSlim _cacheOperationLock = new(1, 1);
     private CancellationTokenSource? _cacheCts;
+    private ThemePreference _themePreference;
+    private bool _effectiveDarkTheme;
 
     private RemoteControlServer? _server;
     private FullscreenWindow? _fullscreenWindow;
@@ -40,6 +45,7 @@ public partial class MainWindow : Window
     public MainWindow()
     {
         InitializeComponent();
+        InitializeTheme();
         SlideListBox.ItemsSource = _slides;
         _slides.CollectionChanged += (_, _) => RefreshNumbers();
     }
@@ -50,6 +56,12 @@ public partial class MainWindow : Window
         await InitPreviewWebViewAsync();
         LoadDefaultSlides();
         StartRemoteServer();
+    }
+
+    protected override void OnSourceInitialized(EventArgs e)
+    {
+        base.OnSourceInitialized(e);
+        ApplyWindowChromeTheme(_effectiveDarkTheme);
     }
 
     private async Task InitPreviewWebViewAsync()
@@ -286,6 +298,10 @@ public partial class MainWindow : Window
             "Use the remote control page to navigate slides.",
             "Remote Control", MessageBoxButton.OK, MessageBoxImage.Information);
     }
+
+    private void UseSystemTheme_Click(object sender, RoutedEventArgs e) => SetThemePreference(ThemePreference.System);
+    private void UseLightTheme_Click(object sender, RoutedEventArgs e) => SetThemePreference(ThemePreference.Light);
+    private void UseDarkTheme_Click(object sender, RoutedEventArgs e) => SetThemePreference(ThemePreference.Dark);
 
     // -----------------------------------------------------------------------
     // Slide list toolbar buttons
@@ -800,6 +816,124 @@ public partial class MainWindow : Window
     {
         SlideCountLabel.Text = _slides.Count == 1 ? "(1 slide)" : $"({_slides.Count} slides)";
     }
+
+    private void InitializeTheme()
+    {
+        _themePreference = PersistenceService.LoadThemePreference();
+        ApplyTheme(_themePreference);
+    }
+
+    private void SetThemePreference(ThemePreference preference)
+    {
+        _themePreference = preference;
+        PersistenceService.SaveThemePreference(preference);
+        ApplyTheme(preference);
+    }
+
+    private void ApplyTheme(ThemePreference preference)
+    {
+        var effectiveTheme = preference switch
+        {
+            ThemePreference.System => IsSystemDarkModeEnabled() ? ThemePreference.Dark : ThemePreference.Light,
+            _ => preference
+        };
+
+        _effectiveDarkTheme = effectiveTheme == ThemePreference.Dark;
+        ApplyThemeBrushes(_effectiveDarkTheme);
+        ApplyWindowChromeTheme(_effectiveDarkTheme);
+        SyncThemeMenuState(preference);
+    }
+
+    private static bool IsSystemDarkModeEnabled()
+    {
+        try
+        {
+            using var personalizeKey = Registry.CurrentUser.OpenSubKey(@"Software\Microsoft\Windows\CurrentVersion\Themes\Personalize");
+            var appsUseLightTheme = personalizeKey?.GetValue("AppsUseLightTheme");
+            return appsUseLightTheme is int value && value == 0;
+        }
+        catch
+        {
+            return false;
+        }
+    }
+
+    private static void ApplyThemeBrushes(bool dark)
+    {
+        if (Application.Current?.Resources is not ResourceDictionary resources)
+            return;
+
+        SetBrush(resources, "AppWindowBackgroundBrush", dark ? "#1E1E1E" : "#F5F5F5");
+        SetBrush(resources, "MenuBackgroundBrush", dark ? "#252526" : "#FFFFFF");
+        SetBrush(resources, "MenuPopupBackgroundBrush", dark ? "#2B2B31" : "#FFFFFF");
+        SetBrush(resources, "MenuPopupBorderBrush", dark ? "#4B4B52" : "#D0D0D0");
+        SetBrush(resources, "MenuItemHoverBackgroundBrush", dark ? "#3A3D41" : "#E5F3FB");
+        SetBrush(resources, "MenuItemHoverBorderBrush", dark ? "#50545A" : "#99D1F5");
+        SetBrush(resources, "ToolbarBackgroundBrush", dark ? "#2D2D30" : "#F3F3F3");
+        SetBrush(resources, "ToolbarForegroundBrush", dark ? "#F0F0F0" : "#1E1E1E");
+        SetBrush(resources, "ToolbarSeparatorBrush", dark ? "#4B4B50" : "#BEBEBE");
+        SetBrush(resources, "SidebarBackgroundBrush", dark ? "#252526" : "#FAFAFA");
+        SetBrush(resources, "SidebarHeaderBackgroundBrush", dark ? "#333337" : "#E8E8E8");
+        SetBrush(resources, "SidebarHeaderBorderBrush", dark ? "#3F3F46" : "#D0D0D0");
+        SetBrush(resources, "PanelBorderBrush", dark ? "#3F3F46" : "#E8E8E8");
+        SetBrush(resources, "PrimaryTextBrush", dark ? "#F0F0F0" : "#222222");
+        SetBrush(resources, "SecondaryTextBrush", dark ? "#C8C8C8" : "#555555");
+        SetBrush(resources, "MutedTextBrush", dark ? "#A0A0A0" : "#888888");
+        SetBrush(resources, "TextInputForegroundBrush", dark ? "#F0F0F0" : "#333333");
+        SetBrush(resources, "ItemHoverBackgroundBrush", dark ? "#3A3D41" : "#E5F3FB");
+        SetBrush(resources, "ItemSelectedBackgroundBrush", "#0078D4");
+        SetBrush(resources, "ItemSelectedHoverBackgroundBrush", "#0067BE");
+        SetBrush(resources, "SplitterBrush", dark ? "#454545" : "#D0D0D0");
+        SetBrush(resources, "ButtonBackgroundBrush", dark ? "#3A3A3D" : "#FFFFFF");
+        SetBrush(resources, "ButtonBorderBrush", dark ? "#5A5A5E" : "#C8C8C8");
+        SetBrush(resources, "ButtonHoverBackgroundBrush", dark ? "#4A4A4E" : "#EDEDED");
+        SetBrush(resources, "ButtonHoverBorderBrush", dark ? "#868690" : "#9A9A9A");
+        SetBrush(resources, "ButtonPressedBackgroundBrush", dark ? "#56565A" : "#DDDDDD");
+        SetBrush(resources, "ButtonPressedBorderBrush", dark ? "#A0A0AE" : "#7E7E7E");
+        SetBrush(resources, "PreviewPaneBackgroundBrush", dark ? "#1F1F22" : "#222222");
+        SetBrush(resources, "PreviewPlaceholderTitleBrush", dark ? "#8C8C95" : "#5E5E5E");
+        SetBrush(resources, "PreviewPlaceholderBodyBrush", dark ? "#A8A8B2" : "#777777");
+        SetBrush(resources, "ScrollBarTrackBrush", dark ? "#2E2E34" : "#E7E7E7");
+        SetBrush(resources, "ScrollBarThumbBrush", dark ? "#5A5A63" : "#B0B0B0");
+        SetBrush(resources, "ScrollBarThumbHoverBrush", dark ? "#70707C" : "#8F8F8F");
+        SetBrush(resources, "ScrollBarArrowBrush", dark ? "#D0D0D8" : "#4F4F4F");
+        SetBrush(resources, "TooltipBackgroundBrush", dark ? "#2D2D30" : "#FFFFFF");
+        SetBrush(resources, "TooltipForegroundBrush", dark ? "#F0F0F0" : "#1E1E1E");
+        SetBrush(resources, "TooltipBorderBrush", dark ? "#5A5A5E" : "#777777");
+
+        resources[SystemColors.MenuBrushKey] = new SolidColorBrush((Color)ColorConverter.ConvertFromString(dark ? "#2B2B31" : "#FFFFFF"));
+        resources[SystemColors.MenuTextBrushKey] = new SolidColorBrush((Color)ColorConverter.ConvertFromString(dark ? "#F0F0F0" : "#222222"));
+        resources[SystemColors.HighlightBrushKey] = new SolidColorBrush((Color)ColorConverter.ConvertFromString(dark ? "#3A3D41" : "#E5F3FB"));
+        resources[SystemColors.HighlightTextBrushKey] = new SolidColorBrush((Color)ColorConverter.ConvertFromString(dark ? "#FFFFFF" : "#111111"));
+    }
+
+    private static void SetBrush(ResourceDictionary resources, string key, string hexColor)
+    {
+        resources[key] = new SolidColorBrush((Color)ColorConverter.ConvertFromString(hexColor));
+    }
+
+    private void SyncThemeMenuState(ThemePreference preference)
+    {
+        UseSystemThemeMenuItem.IsChecked = preference == ThemePreference.System;
+        UseLightThemeMenuItem.IsChecked = preference == ThemePreference.Light;
+        UseDarkThemeMenuItem.IsChecked = preference == ThemePreference.Dark;
+    }
+
+    private void ApplyWindowChromeTheme(bool dark)
+    {
+        var handle = new WindowInteropHelper(this).Handle;
+        if (handle == IntPtr.Zero)
+            return;
+
+        if (Environment.OSVersion.Version.Major < 10)
+            return;
+
+        var useDark = dark ? 1 : 0;
+        _ = DwmSetWindowAttribute(handle, 20, ref useDark, Marshal.SizeOf<int>());
+    }
+
+    [DllImport("dwmapi.dll")]
+    private static extern int DwmSetWindowAttribute(IntPtr hwnd, int dwAttribute, ref int pvAttribute, int cbAttribute);
 
     private static T? FindAncestor<T>(DependencyObject? obj) where T : DependencyObject
     {

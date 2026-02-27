@@ -77,4 +77,36 @@ public sealed class PersistenceServiceTests : IDisposable
 
         Assert.Equal(urls, loaded);
     }
+
+    [Theory]
+    [InlineData(ThemePreference.System)]
+    [InlineData(ThemePreference.Light)]
+    [InlineData(ThemePreference.Dark)]
+    public void SaveThemePreference_AndLoadThemePreference_RoundTrip(ThemePreference preference)
+    {
+        PersistenceService.SaveThemePreference(preference);
+
+        var loaded = PersistenceService.LoadThemePreference();
+
+        Assert.Equal(preference, loaded);
+    }
+
+    [Fact]
+    public void LoadThemePreference_ReturnsSystem_WhenThemeFileMissing()
+    {
+        var loaded = PersistenceService.LoadThemePreference();
+
+        Assert.Equal(ThemePreference.System, loaded);
+    }
+
+    [Fact]
+    public void LoadThemePreference_ReturnsSystem_WhenThemeValueInvalid()
+    {
+        var path = Path.Combine(_tempDir, "theme.txt");
+        File.WriteAllText(path, "sepia");
+
+        var loaded = PersistenceService.LoadThemePreference();
+
+        Assert.Equal(ThemePreference.System, loaded);
+    }
 }

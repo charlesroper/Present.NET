@@ -2,6 +2,13 @@ using System.IO;
 
 namespace Present.NET.Services;
 
+public enum ThemePreference
+{
+    System,
+    Light,
+    Dark
+}
+
 /// <summary>
 /// Handles saving and restoring the slide URL list to/from disk.
 /// Auto-save location: %APPDATA%\Present.NET\slides.txt
@@ -17,6 +24,7 @@ public static class PersistenceService
     private static string _appDataDir = DefaultAppDataDir;
 
     private static string DefaultSavePath => Path.Combine(_appDataDir, "slides.txt");
+    private static string ThemePreferencePath => Path.Combine(_appDataDir, "theme.txt");
 
     /// <summary>
     /// Load URLs from the auto-save file. Returns empty list if not found.
@@ -43,6 +51,34 @@ public static class PersistenceService
     {
         Directory.CreateDirectory(_appDataDir);
         SaveTo(DefaultSavePath, urls);
+    }
+
+    public static ThemePreference LoadThemePreference()
+    {
+        if (!File.Exists(ThemePreferencePath))
+            return ThemePreference.System;
+
+        var raw = File.ReadAllText(ThemePreferencePath).Trim();
+        return raw.ToLowerInvariant() switch
+        {
+            "light" => ThemePreference.Light,
+            "dark" => ThemePreference.Dark,
+            "system" => ThemePreference.System,
+            _ => ThemePreference.System
+        };
+    }
+
+    public static void SaveThemePreference(ThemePreference preference)
+    {
+        Directory.CreateDirectory(_appDataDir);
+        var serialized = preference switch
+        {
+            ThemePreference.Light => "light",
+            ThemePreference.Dark => "dark",
+            _ => "system"
+        };
+
+        File.WriteAllText(ThemePreferencePath, serialized);
     }
 
     internal static void ConfigureStorageRootForTesting(string appDataDir)
