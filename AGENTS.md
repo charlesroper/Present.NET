@@ -85,6 +85,18 @@ Before finishing a change:
 For building distributable releases (exe, installer, etc.), see the
 `publishing-wpf-apps` skill in `.agents/skills/`.
 
+## Agent Skills
+
+This project utilizes specialized skills located in `.agents/skills/`. Before performing complex tasks (like publishing or writing commits), ensure the required skills are available.
+
+### Checking and Installing Skills
+1. **List installed skills**: Use the `skill` tool or look at `skills-lock.json`.
+2. **Find/Install missing skills**: Use the `find-skills` skill to search for and install project-relevant skills:
+   - `publishing-wpf-apps`: For build and packaging guidance.
+   - `cbeams-git-commit-messages`: For consistent history.
+   - `on-writing-well`: For clear documentation and release notes.
+3. **Execution**: If a skill is missing, ask the user to provide the skill source or use the `find-skills` workflow to acquire it.
+
 ## Versioning
 
 This project uses [Romantic Versioning](https://github.com/romversioning/romver):
@@ -102,9 +114,16 @@ Examples:
 
 ## Release Process
 
-Releases are automated via GitHub Actions (see `.github/workflows/release.yml`):
+Releases are automated via GitHub Actions (see `.github/workflows/release.yml`), but release notes must be updated manually via CLI for high-quality human-readable summaries:
 
-1. Push a version tag: `git tag v1.0.0 && git push --tags`
-2. Workflow builds self-contained Windows exe
-3. Creates GitHub Release with zip attached
-4. Prerelease tags (alpha, beta, rc) are auto-marked as prerelease
+1. **Tag and Push**: Create the version tag and push to trigger the build.
+   ```bash
+   git tag vX.Y.Z && git push origin vX.Y.Z
+   ```
+2. **Monitor Build**: Use `gh run watch` to ensure the automated build and release creation completes.
+3. **Draft Notes**: Use the `on-writing-well` skill to draft a professional summary of changes based on `git log <prev-tag>..HEAD`.
+4. **Update Release**: Once the GitHub Action has created the release, update its description:
+   ```bash
+   gh release edit vX.Y.Z --notes "your custom markdown notes"
+   ```
+   *Tip: Use a heredoc in bash/zsh to maintain multi-line markdown formatting.*
