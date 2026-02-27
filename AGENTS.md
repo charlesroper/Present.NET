@@ -20,6 +20,7 @@ Use these commands from repo root:
 ```powershell
 dotnet restore
 dotnet build Present.NET.sln
+dotnet format Present.NET.sln
 dotnet run --project src/Present.NET/Present.NET.csproj
 ```
 
@@ -78,3 +79,8 @@ Before finishing a change:
 - Relevant tests pass (and full suite when possible).
 - User-visible behavior changes are reflected in `README.md`.
 - Naming stays consistent as `Present.NET` across UI/docs.
+
+## Publishing
+
+For building distributable releases (exe, installer, etc.), see the
+`publishing-wpf-apps` skill in `.agents/skills/`.
