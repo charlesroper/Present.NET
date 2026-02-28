@@ -40,7 +40,8 @@ jobs:
       - name: Create zip
         run: |
           $version = "${{ steps.version.outputs.version }}"
-          Compress-Archive -Path ./publish/* -DestinationPath ./Present.NET-$version-win-x64.zip
+          7z a -tzip -mx=9 ./Present.NET-$version-win-x64.zip ./publish/*
+        shell: pwsh
 
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
