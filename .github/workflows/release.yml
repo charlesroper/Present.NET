@@ -40,7 +40,7 @@ jobs:
       - name: Create zip
         run: |
           $version = "${{ steps.version.outputs.version }}"
-          7z a -tzip -mx=9 ./Present.NET-$version-win-x64.zip ./publish/*
+          7z a -tzip -mx=5 ./Present.NET-$version-win-x64.zip ./publish/*
         shell: pwsh
 
       - name: Create GitHub Release
