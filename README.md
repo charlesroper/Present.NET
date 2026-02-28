@@ -1,5 +1,11 @@
 # Present.NET
 
+[![Build Status](https://img.shields.io/github/actions/workflow/status/charlesroper/Present.NET/release.yml)](https://github.com/charlesroper/Present.NET/actions)
+[![Latest Release](https://img.shields.io/github/v/tag/charlesroper/Present.NET?label=release)](https://github.com/charlesroper/Present.NET/releases)
+![.NET](https://img.shields.io/badge/.NET-8.0-purple)
+![Platform](https://img.shields.io/badge/platform-Windows-blue)
+[![License](https://img.shields.io/github/license/charlesroper/Present.NET)](https://github.com/charlesroper/Present.NET/blob/main/LICENSE)
+
 A Windows .NET presentation app that displays web content and images as slides.
 
 This is a vibe-coded port of Simon Willison's [dream macOS presentation app](https://simonwillison.net/2026/Feb/25/present/). It is entirely built in OpenCode, mostly using OpenAI GPT-5.3 Codex and MiniMax-M2.5 Free models. I have never opened the project in Visual Studio.
