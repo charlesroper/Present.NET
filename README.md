@@ -6,6 +6,8 @@ This is a vibe-coded port of Simon Willison's [dream macOS presentation app](htt
 
 For contributor/agent workflow guidance, see `AGENTS.md`.
 
+![Present.NET Screenshot](Present.NET_2026-02-28_3429.webp)
+
 ## Features
 
 - **Edit Mode**: Left sidebar with slide URL list (numbered, drag-to-reorder); right pane WebView2 preview of the selected slide
