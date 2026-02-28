@@ -2,7 +2,7 @@
 
 A Windows .NET presentation app that displays web content and images as slides.
 
-This is a vibe-coded port of Simon Willison's [dream macOS presentation app](https://simonwillison.net/2026/Feb/25/present/). It is entirely built in OpenCode, mostly using OpenAI Codex models and MiniMax M2.5 Free. I have never opened the project in Visual Studio.
+This is a vibe-coded port of Simon Willison's [dream macOS presentation app](https://simonwillison.net/2026/Feb/25/present/). It is entirely built in OpenCode, mostly using OpenAI GPT-5.3 Codex and MiniMax-M2.5 Free models. I have never opened the project in Visual Studio.
 
 For contributor/agent workflow guidance, see `AGENTS.md`.
 
